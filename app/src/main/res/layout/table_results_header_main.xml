@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.gridlayout.widget.GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/table_results_title_main"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@color/light_green"
+    app:columnCount="1"
+    app:rowCount="1"
+    app:orientation="vertical">
+
+    <TextView
+        android:layout_width="100dp"
+        android:layout_height="30dp"
+        android:gravity="center"
+        android:background="@color/dark_green"
+        android:layout_marginTop="1dp"
+        android:layout_marginBottom="1dp"
+        android:fontFamily="@font/roboto_bold"
+        android:textSize="14sp"
+        android:textColor="@color/white"
+        app:layout_row="0"
+        app:layout_column="0"
+        app:layout_gravity="fill_vertical"
+        android:text="Работа" />
+
+</androidx.gridlayout.widget.GridLayout>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.gridlayout.widget.GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/table_cheaters_title"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@color/light_green"
+    app:columnCount="5"
+    app:orientation="vertical">
+
+    <TextView
+        android:layout_width="70dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:background="@color/dark_green"
+        android:layout_marginTop="1dp"
+        android:layout_marginBottom="1dp"
+        android:fontFamily="@font/roboto_bold"
+        android:textSize="14sp"
+        android:textColor="@color/white"
+        app:layout_row="0"
+        app:layout_column="0"
+        app:layout_gravity="fill"
+        android:text="Группа" />
+
+    <TextView
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:background="@color/dark_green"
+        android:layout_marginTop="1dp"
+        android:layout_marginBottom="1dp"
+        android:fontFamily="@font/roboto_bold"
+        android:textSize="14sp"
+        android:textColor="@color/white"
+        app:layout_row="0"
+        app:layout_column="1"
+        app:layout_gravity="fill"
+        android:text="Работы" />
+
+    <TextView
+        android:layout_width="110dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:background="@color/dark_green"
+        android:layout_marginTop="1dp"
+        android:layout_marginBottom="1dp"
+        android:fontFamily="@font/roboto_bold"
+        android:textSize="14sp"
+        android:textColor="@color/white"
+        app:layout_row="0"
+        app:layout_column="2"
+        app:layout_gravity="fill"
+        android:text="Кол-во работ" />
+
+    <TextView
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:background="@color/dark_green"
+        android:layout_marginTop="1dp"
+        android:layout_marginBottom="1dp"
+        android:fontFamily="@font/roboto_bold"
+        android:textSize="14sp"
+        android:textColor="@color/white"
+        app:layout_row="0"
+        app:layout_column="3"
+        android:text="Сумма баллов совпавших заданий" />
+
+    <TextView
+        android:layout_width="190dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:background="@color/dark_green"
+        android:layout_marginTop="1dp"
+        android:layout_marginBottom="1dp"
+        android:fontFamily="@font/roboto_bold"
+        android:textSize="14sp"
+        android:textColor="@color/white"
+        app:layout_row="0"
+        app:layout_column="4"
+        app:layout_gravity="fill"
+        android:text="Вероятность списывания" />
+
+</androidx.gridlayout.widget.GridLayout>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.gridlayout.widget.GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/table_results_title_end"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@color/light_green"
+    app:columnCount="2"
+    app:rowCount="2"
+    app:orientation="vertical">
+
+    <TextView
+        android:layout_width="120dp"
+        android:layout_height="61dp"
+        android:gravity="center"
+        android:background="@color/dark_green"
+        android:layout_marginTop="1dp"
+        android:layout_marginBottom="1dp"
+        android:fontFamily="@font/roboto_bold"
+        android:textSize="14sp"
+        android:textColor="@color/white"
+        app:layout_row="0"
+        app:layout_column="0"
+        app:layout_rowSpan="2"
+        app:layout_gravity="fill_vertical"
+        android:text="Сумма баллов" />
+
+    <TextView
+        android:layout_width="70dp"
+        android:layout_height="61dp"
+        android:gravity="center"
+        android:background="@color/dark_green"
+        android:layout_marginTop="1dp"
+        android:layout_marginBottom="1dp"
+        android:fontFamily="@font/roboto_bold"
+        android:textSize="14sp"
+        android:textColor="@color/white"
+        app:layout_row="0"
+        app:layout_column="1"
+        app:layout_rowSpan="2"
+        app:layout_gravity="fill_vertical"
+        android:text="Оценка" />
+
+</androidx.gridlayout.widget.GridLayout>
