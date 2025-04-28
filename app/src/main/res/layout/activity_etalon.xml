@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@color/dark_green"
-    tools:context=".Activities.EtalonActivity">
+    tools:context=".Presentation.EtalonActivity">
 
     <ScrollView
         android:layout_width="match_parent"
@@ -100,7 +100,7 @@
                 app:boxCornerRadiusBottomEnd="12dp"
                 app:hintTextColor="@color/white"
                 app:boxStrokeWidth="2dp"
-                style="@style/Theme.TextInputLayoutStyle">
+                style="@style/TextInputLayoutStyle">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etalon_name_input"
@@ -225,7 +225,7 @@
                 app:boxCornerRadiusBottomEnd="12dp"
                 app:hintTextColor="@color/white"
                 app:boxStrokeWidth="2dp"
-                style="@style/Theme.TextInputLayoutStyle">
+                style="@style/TextInputLayoutStyle">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/tasks_count_etalon"

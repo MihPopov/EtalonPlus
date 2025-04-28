@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@color/dark_green"
-    tools:context=".Activities.SettingsActivity">
+    tools:context=".Presentation.SettingsActivity">
 
     <ScrollView
         android:layout_width="match_parent"
@@ -82,9 +82,140 @@
                 android:layout_gravity="center"
                 android:layout_marginTop="10dp"
                 android:fontFamily="@font/roboto_bold"
+                android:text="Проверка работ"
+                android:textColor="@color/white"
+                android:textSize="26sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
+                android:layout_marginEnd="20dp"
+                android:layout_marginTop="15dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:fontFamily="@font/roboto_bold"
+                    android:text="Использовать ИИ для\nсчитывания текста"
+                    android:textColor="@color/white"
+                    android:textSize="18sp" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/ii_switch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="15dp"
+                    app:trackDecorationTint="@color/white"
+                    app:thumbTint="@color/dark_green"
+                    app:trackTint="@color/light_green" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/symbols_to_ignore_layout"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginStart="20dp"
+                android:layout_marginEnd="20dp"
+                android:layout_marginTop="10dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/roboto_bold"
+                    android:text="Незначащие символы"
+                    android:textColor="@color/white"
+                    android:textSize="20sp" />
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    app:cardBackgroundColor="@color/light_green"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="6dp"
+                    tools:ignore="OnClick">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:padding="12dp"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:layout_marginEnd="10dp"
+                                android:src="@drawable/attention"
+                                app:tint="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="-5dp"
+                                android:text="По умолчанию искусственный интеллект игнорирует следующие"
+                                android:textColor="@color/dark_green"
+                                android:textSize="16sp" />
+
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="-2dp"
+                            android:text="символы: ()[].=; Зачёркнутые ответы тоже не считываются. Ниже вы можете перечислить другие символы, которые не относятся к ответам на задания."
+                            android:textColor="@color/dark_green"
+                            android:textSize="16sp" />
+
+                    </LinearLayout>
+
+                </androidx.cardview.widget.CardView>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:textColorHint="@color/white"
+                    app:cursorColor="@color/white"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusBottomEnd="12dp"
+                    app:hintTextColor="@color/white"
+                    app:boxStrokeWidth="2dp"
+                    style="@style/TextInputLayoutStyle">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/symbols_to_ignore_input"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/roboto"
+                        android:hint="Незначащие символы"
+                        android:inputType="textShortMessage"
+                        android:textColor="@color/white" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="20sp"
+                android:layout_marginTop="10dp"
+                android:fontFamily="@font/roboto_bold"
                 android:text="Система оценок"
                 android:textColor="@color/white"
-                android:textSize="24sp" />
+                android:textSize="20sp" />
 
             <androidx.gridlayout.widget.GridLayout
                 android:id="@+id/grades_system_table"
@@ -104,6 +235,7 @@
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_gravity="center"
                     android:orientation="horizontal">
 
                     <androidx.cardview.widget.CardView
@@ -123,13 +255,13 @@
                             android:layout_height="wrap_content"
                             android:gravity="center"
                             android:orientation="horizontal"
-                            android:padding="16dp">
+                            android:padding="12dp">
 
                             <ImageView
                                 android:layout_width="32dp"
                                 android:layout_height="32dp"
                                 android:layout_marginEnd="12dp"
-                                android:src="@drawable/add"
+                                android:src="@drawable/plus"
                                 app:tint="@color/dark_green" />
 
                             <TextView
@@ -160,13 +292,13 @@
                             android:layout_height="wrap_content"
                             android:gravity="center"
                             android:orientation="horizontal"
-                            android:padding="16dp">
+                            android:padding="12dp">
 
                             <ImageView
-                                android:layout_width="40dp"
-                                android:layout_height="40dp"
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
                                 android:layout_marginEnd="12dp"
-                                android:src="@drawable/delete"
+                                android:src="@drawable/minus"
                                 app:tint="@color/dark_green" />
 
                             <TextView
@@ -218,7 +350,7 @@
                 app:boxCornerRadiusBottomEnd="12dp"
                 app:hintTextColor="@color/white"
                 app:boxStrokeWidth="2dp"
-                style="@style/Theme.TextInputLayoutStyle">
+                style="@style/TextInputLayoutStyle">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/table_name_input"

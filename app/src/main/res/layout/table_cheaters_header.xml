@@ -65,7 +65,7 @@
         android:textColor="@color/white"
         app:layout_row="0"
         app:layout_column="3"
-        android:text="Сумма баллов совпавших заданий" />
+        android:text="Номера совпавших заданий" />
 
     <TextView
         android:layout_width="190dp"

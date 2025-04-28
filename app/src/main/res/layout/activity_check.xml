@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@color/dark_green"
-    tools:context=".Activities.CheckActivity">
+    tools:context=".Presentation.CheckActivity">
 
     <ScrollView
         android:id="@+id/scrollview"
@@ -244,7 +244,7 @@
                         android:layout_width="32dp"
                         android:layout_height="32dp"
                         android:layout_marginEnd="12dp"
-                        android:src="@drawable/add"
+                        android:src="@drawable/plus"
                         app:tint="@color/dark_green" />
 
                     <TextView
@@ -320,7 +320,7 @@
                     app:boxCornerRadiusTopStart="12dp"
                     app:hintTextColor="@color/white"
                     app:boxStrokeWidth="2dp"
-                    style="@style/Theme.TextInputLayoutStyle">
+                    style="@style/TextInputLayoutStyle">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/tasks_count_input"
@@ -406,7 +406,7 @@
 
                         <androidx.gridlayout.widget.GridLayout
                             android:id="@+id/answers_table"
-                            android:layout_width="match_parent"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:background="@color/light_green"
                             app:columnCount="1" />
@@ -740,7 +740,7 @@
                         app:boxCornerRadiusBottomEnd="12dp"
                         app:hintTextColor="@color/white"
                         app:boxStrokeWidth="2dp"
-                        style="@style/Theme.TextInputLayoutStyle">
+                        style="@style/TextInputLayoutStyle">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etalon_check_name_input"

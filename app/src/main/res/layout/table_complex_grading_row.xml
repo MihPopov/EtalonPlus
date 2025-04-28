@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.gridlayout.widget.GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/table_grades_row"
+    android:id="@+id/table_complex_grading_row"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:background="@color/light_green"
@@ -9,7 +9,7 @@
     app:orientation="vertical">
 
     <androidx.cardview.widget.CardView
-        android:layout_width="140dp"
+        android:layout_width="110dp"
         android:layout_height="30dp"
         android:layout_marginBottom="1dp"
         app:layout_row="0"
@@ -19,7 +19,7 @@
         app:cardCornerRadius="0dp">
 
         <androidx.cardview.widget.CardView
-            android:layout_width="70dp"
+            android:layout_width="60dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             app:cardBackgroundColor="@color/light_green"
@@ -27,22 +27,22 @@
             app:cardElevation="0dp">
 
             <EditText
-                android:id="@+id/min_points_input"
+                android:id="@+id/min_mistakes_input"
                 android:layout_width="match_parent"
                 android:layout_height="25dp"
                 android:gravity="center"
                 android:background="@android:color/transparent"
                 android:fontFamily="@font/roboto_bold"
-                android:textSize="14sp"
+                android:textSize="12sp"
                 android:textColor="@color/white"
-                android:inputType="numberDecimal" />
+                android:inputType="number" />
 
         </androidx.cardview.widget.CardView>
 
     </androidx.cardview.widget.CardView>
 
     <androidx.cardview.widget.CardView
-        android:layout_width="140dp"
+        android:layout_width="110dp"
         android:layout_height="30dp"
         android:layout_marginBottom="1dp"
         app:layout_row="0"
@@ -52,7 +52,7 @@
         app:cardCornerRadius="0dp">
 
         <androidx.cardview.widget.CardView
-            android:layout_width="70dp"
+            android:layout_width="60dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             app:cardBackgroundColor="@color/light_green"
@@ -60,32 +60,51 @@
             app:cardElevation="0dp">
 
             <EditText
-                android:id="@+id/max_points_input"
+                android:id="@+id/max_mistakes_input"
                 android:layout_width="match_parent"
                 android:layout_height="25dp"
                 android:gravity="center"
                 android:background="@android:color/transparent"
                 android:fontFamily="@font/roboto_bold"
-                android:textSize="14sp"
+                android:textSize="12sp"
+                android:textColor="@color/white"
+                android:inputType="number" />
+
+        </androidx.cardview.widget.CardView>
+
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="80dp"
+        android:layout_height="30dp"
+        android:layout_marginBottom="1dp"
+        app:layout_row="0"
+        app:layout_column="2"
+        app:cardBackgroundColor="@color/dark_green"
+        app:cardElevation="0dp"
+        app:cardCornerRadius="0dp">
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="60dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            app:cardBackgroundColor="@color/light_green"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp">
+
+            <EditText
+                android:id="@+id/complex_points_input"
+                android:layout_width="match_parent"
+                android:layout_height="25dp"
+                android:gravity="center"
+                android:background="@android:color/transparent"
+                android:fontFamily="@font/roboto_bold"
+                android:textSize="12sp"
                 android:textColor="@color/white"
                 android:inputType="numberDecimal" />
 
         </androidx.cardview.widget.CardView>
 
     </androidx.cardview.widget.CardView>
-
-    <TextView
-        android:id="@+id/grade_view"
-        android:layout_width="73dp"
-        android:layout_height="30dp"
-        android:gravity="center"
-        android:background="@color/dark_green"
-        android:layout_marginBottom="1dp"
-        android:fontFamily="@font/roboto_bold"
-        android:textSize="14sp"
-        android:textColor="@color/white"
-        app:layout_row="0"
-        app:layout_column="2"
-        android:text="5" />
 
 </androidx.gridlayout.widget.GridLayout>

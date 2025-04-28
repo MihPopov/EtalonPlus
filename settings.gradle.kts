@@ -21,4 +21,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "BigChallengesProject"
 include(":app")
-include(":opencv")

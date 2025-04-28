@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.android.application)
-//    id("com.chaquo.python")
 }
 
 android {
@@ -15,10 +14,6 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-//        ndk {
-//            abiFilters += listOf("arm64-v8a")
-//        }
     }
 
     buildTypes {
@@ -36,23 +31,11 @@ android {
     }
 }
 
-//chaquopy {
-//    defaultConfig {
-//        version = "3.8"
-//        pip {
-//            install("libs/pyclipper-1.3.0.post6-cp38-cp38-win_amd64.whl")
-//            install("-r", "requirements.txt")
-//        }
-//    }
-//}
-
 dependencies {
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
-    implementation(project(":opencv"))
-//    implementation(libs.microsoft.onnxruntime.android)
     implementation(libs.core.splashscreen)
     implementation(libs.gridlayout)
     implementation(libs.poi)

@@ -15,7 +15,6 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-        android:usesCleartextTraffic="true"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -27,19 +26,19 @@
         tools:ignore="HardcodedDebugMode"
         tools:targetApi="31">
         <activity
-            android:name=".Activities.EtalonActivity"
+            android:name=".Presentation.EtalonActivity"
             android:exported="false" />
         <activity
-            android:name=".Activities.SettingsActivity"
+            android:name=".Presentation.SettingsActivity"
             android:exported="false" />
         <activity
-            android:name=".Activities.StorageActivity"
+            android:name=".Presentation.StorageActivity"
             android:exported="false" />
         <activity
-            android:name=".Activities.CheckActivity"
+            android:name=".Presentation.CheckActivity"
             android:exported="false" />
         <activity
-            android:name=".Activities.SplashActivity"
+            android:name=".Presentation.SplashActivity"
             android:exported="true"
             android:theme="@style/Theme.MySplash">
             <intent-filter>
@@ -49,7 +48,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".Activities.HomeActivity"
+            android:name=".Presentation.HomeActivity"
             android:exported="true"
             android:theme="@style/Base.Theme.BigChallengesProject" />
 
