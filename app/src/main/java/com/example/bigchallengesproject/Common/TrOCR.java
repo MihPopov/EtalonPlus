@@ -24,11 +24,11 @@ public class TrOCR {
     Retrofit retrofit;
     API api;
 
-    public TrOCR() {
+    public TrOCR(int waitTime) {
         OkHttpClient okHttpClient = new OkHttpClient.Builder()
                 .connectTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(60, TimeUnit.SECONDS)
-                .writeTimeout(60, TimeUnit.SECONDS)
+                .readTimeout(waitTime + 30, TimeUnit.SECONDS)
+                .writeTimeout(waitTime + 30, TimeUnit.SECONDS)
                 .build();
 
         retrofit = new Retrofit.Builder()

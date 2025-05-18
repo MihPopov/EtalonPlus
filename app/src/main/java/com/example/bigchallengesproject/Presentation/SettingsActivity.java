@@ -30,7 +30,7 @@ public class SettingsActivity extends AppCompatActivity {
 
     androidx.gridlayout.widget.GridLayout gradesSystemTable;
     TextInputEditText tableNameInput, symbolsToIgnoreInput;
-    MaterialSwitch iiSwitch, oneTableSwitch, oneSheetSwitch;
+    MaterialSwitch iiSwitch, oneTableSwitch, oneSheetSwitch, coloringSwitch, analysisSwitch;
     LinearLayout oneSheetLayout, symbolsToIgnoreLayout;
 
     DatabaseHelper dbHelper;
@@ -51,6 +51,8 @@ public class SettingsActivity extends AppCompatActivity {
         oneTableSwitch = findViewById(R.id.one_table_switch);
         oneSheetLayout = findViewById(R.id.one_sheet_layout);
         oneSheetSwitch = findViewById(R.id.one_sheet_switch);
+        coloringSwitch = findViewById(R.id.coloring_switch);
+        analysisSwitch = findViewById(R.id.analysis_switch);
 
         dbHelper = new DatabaseHelper(this);
         settings = getSharedPreferences("Preferences", MODE_PRIVATE);
@@ -90,6 +92,8 @@ public class SettingsActivity extends AppCompatActivity {
                 else oneSheetLayout.setVisibility(GONE);
             }
         });
+        coloringSwitch.setChecked(settings.getBoolean("isColoringEnabled", true));
+        analysisSwitch.setChecked(settings.getBoolean("isAnalysisEnabled", false));
     }
 
     public void onExitFromSettingsClick(View view) {
@@ -115,6 +119,8 @@ public class SettingsActivity extends AppCompatActivity {
             prefEditor.putString("tableName", tableName);
             prefEditor.putBoolean("isOneTableEnabled", isOneTableEnabled);
             if (isOneTableEnabled) prefEditor.putBoolean("isOneSheetEnabled", oneSheetSwitch.isChecked());
+            prefEditor.putBoolean("isColoringEnabled", coloringSwitch.isChecked());
+            prefEditor.putBoolean("isAnalysisEnabled", analysisSwitch.isChecked());
             prefEditor.apply();
         }
         List<String> newGradesSystem = new ArrayList<>();

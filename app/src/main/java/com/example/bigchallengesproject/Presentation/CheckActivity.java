@@ -12,9 +12,12 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.text.Editable;
@@ -38,6 +41,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.gridlayout.widget.GridLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -50,6 +54,20 @@ import com.example.bigchallengesproject.Data.ComplexCriteria;
 import com.example.bigchallengesproject.Data.Etalon;
 import com.example.bigchallengesproject.Data.Grade;
 import com.example.bigchallengesproject.R;
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.charts.PieChart;
+import com.github.mikephil.charting.components.Legend;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.data.PieData;
+import com.github.mikephil.charting.data.PieDataSet;
+import com.github.mikephil.charting.data.PieEntry;
+import com.github.mikephil.charting.formatter.ValueFormatter;
+import com.github.mikephil.charting.utils.ColorTemplate;
+import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.checkbox.MaterialCheckBox;
 import com.google.android.material.textfield.TextInputEditText;
 
@@ -57,12 +75,29 @@ import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xddf.usermodel.chart.AxisPosition;
+import org.apache.poi.xddf.usermodel.chart.ChartTypes;
+import org.apache.poi.xddf.usermodel.chart.LegendPosition;
+import org.apache.poi.xddf.usermodel.chart.MarkerStyle;
+import org.apache.poi.xddf.usermodel.chart.XDDFCategoryAxis;
+import org.apache.poi.xddf.usermodel.chart.XDDFChartData;
+import org.apache.poi.xddf.usermodel.chart.XDDFChartLegend;
+import org.apache.poi.xddf.usermodel.chart.XDDFDataSource;
+import org.apache.poi.xddf.usermodel.chart.XDDFDataSourcesFactory;
+import org.apache.poi.xddf.usermodel.chart.XDDFLineChartData;
+import org.apache.poi.xddf.usermodel.chart.XDDFNumericalDataSource;
+import org.apache.poi.xddf.usermodel.chart.XDDFValueAxis;
+import org.apache.poi.xssf.usermodel.XSSFChart;
+import org.apache.poi.xssf.usermodel.XSSFClientAnchor;
+import org.apache.poi.xssf.usermodel.XSSFDrawing;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.ByteArrayOutputStream;
@@ -97,21 +132,25 @@ public class CheckActivity extends AppCompatActivity {
     EtalonsUseAdapter etalonsUseAdapter;
     ScrollView scrollView;
     LinearLayout tablesPage, recognizedTextPage, recognizedTextTablesLayout, checkWorksLayout, etalonCreationLayout, templateCreationLayout, etalonsListLayout;
-    androidx.gridlayout.widget.GridLayout answersTable, gradesTable, resultsTable, cheatersTable, recTextTable;
+    androidx.gridlayout.widget.GridLayout answersTable, gradesTable, recTextTable, resultsTable, gradesDistributionTable, tasksCompletingTable, cheatersTable;
+    PieChart gradesDistributionChart;
+    LineChart tasksCompletingChart;
     TextInputEditText tasksCountInput, etalonNameInput;
     ImageView etalonIcon;
+    AppBarLayout waitAppBarLayout;
+    TextView remainingTime;
 
     List<Uri> workUris;
     List<Long> workSizes;
     List<Etalon> etalonList;
     private Uri cameraImageUri;
-    private TrOCR trocr;
     DatabaseHelper dbHelper;
     SharedPreferences settings;
     Bitmap etalonIconBitmap;
     List<Grade> grades;
     boolean cardGone = false;
     HashMap<Integer, Pair<String, Double>> answersPointsMap = new HashMap<>();
+    CountDownTimer timer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -119,6 +158,8 @@ public class CheckActivity extends AppCompatActivity {
         setContentView(R.layout.activity_check);
         getWindow().setStatusBarColor(ContextCompat.getColor(this, R.color.dark_green));
 
+        waitAppBarLayout = findViewById(R.id.wait_app_bar_layout);
+        remainingTime = findViewById(R.id.remaining_time);
         scrollView = findViewById(R.id.scrollview);
         uploadCard = findViewById(R.id.upload_card);
         cameraCard = findViewById(R.id.camera_card);
@@ -135,6 +176,10 @@ public class CheckActivity extends AppCompatActivity {
         recognizedTextTablesLayout = findViewById(R.id.rec_tables_layout);
         checkWorksLayout = findViewById(R.id.check_works_page);
         resultsTable = findViewById(R.id.results_table);
+        gradesDistributionTable = findViewById(R.id.grades_distribution_table);
+        gradesDistributionChart = findViewById(R.id.grades_distribution_chart);
+        tasksCompletingTable = findViewById(R.id.tasks_completing_table);
+        tasksCompletingChart = findViewById(R.id.tasks_completing_chart);
         cheatersTable = findViewById(R.id.cheaters_table);
         templateSaveCard = findViewById(R.id.template_save_card);
         etalonCreationLayout = findViewById(R.id.etalon_creation_layout);
@@ -239,8 +284,6 @@ public class CheckActivity extends AppCompatActivity {
         etalonsRecyclerView.setAdapter(etalonsUseAdapter);
 
         etalonIconBitmap = ((BitmapDrawable) getDrawable(R.drawable.etalon_plus)).getBitmap();
-
-        trocr = new TrOCR();
 
         uploadCard.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -416,6 +459,51 @@ public class CheckActivity extends AppCompatActivity {
                         while (d != 0) {
                             View row = getLayoutInflater().inflate(R.layout.table_answers_row, null);
                             ((TextView) row.findViewById(R.id.task_num)).setText(answersTable.getChildCount() + "");
+                            Spinner checkMethodsDropdown = row.findViewById(R.id.check_method_dropdown);
+                            androidx.gridlayout.widget.GridLayout complexGradingTable = row.findViewById(R.id.complex_grading_table);
+                            CardView editComplexGradingTableCard = row.findViewById(R.id.edit_complex_grading_table_card);
+                            checkMethodsDropdown.setAdapter(checkMethodsAdapter);
+
+                            ((LinearLayout) editComplexGradingTableCard.getChildAt(0)).getChildAt(0).setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    complexGradingTable.addView(getLayoutInflater().inflate(R.layout.table_complex_grading_row, null), complexGradingTable.getChildCount() - 1);
+                                }
+                            });
+                            ((LinearLayout) editComplexGradingTableCard.getChildAt(0)).getChildAt(1).setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    if (complexGradingTable.getChildCount() > 4) complexGradingTable.removeViewAt(complexGradingTable.getChildCount() - 2);
+                                }
+                            });
+
+                            checkMethodsDropdown.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                                @SuppressLint("InflateParams")
+                                @Override
+                                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                                    complexGradingTable.removeAllViews();
+                                    if (position == 1) {
+                                        complexGradingTable.setVisibility(VISIBLE);
+                                        editComplexGradingTableCard.setVisibility(VISIBLE);
+
+                                        complexGradingTable.addView(getLayoutInflater().inflate(R.layout.table_complex_grading_header, null));
+                                        View firstRow = getLayoutInflater().inflate(R.layout.table_complex_grading_row, null);
+                                        ((EditText) firstRow.findViewById(R.id.min_mistakes_input)).setText("0");
+                                        ((EditText) firstRow.findViewById(R.id.complex_points_input)).setText(((EditText) row.findViewById(R.id.points_input)).getText().toString().trim());
+                                        complexGradingTable.addView(firstRow);
+                                        complexGradingTable.addView(getLayoutInflater().inflate(R.layout.table_complex_grading_row, null));
+                                        complexGradingTable.addView(getLayoutInflater().inflate(R.layout.table_complex_grading_merged_row, null));
+                                    }
+                                    else {
+                                        complexGradingTable.setVisibility(GONE);
+                                        editComplexGradingTableCard.setVisibility(GONE);
+                                    }
+                                }
+
+                                @Override
+                                public void onNothingSelected(AdapterView<?> parent) {}
+                            });
+
                             answersTable.addView(row);
                             d--;
                         }
@@ -499,6 +587,14 @@ public class CheckActivity extends AppCompatActivity {
         int tasksCount = Integer.parseInt(tasksCountInput.getText().toString());
         boolean isIIEnabled = settings.getBoolean("isIIEnabled", true);
         k = 0;
+        waitAppBarLayout.setVisibility(View.VISIBLE);
+        waitAppBarLayout.animate()
+                .translationY(0)
+                .setDuration(300)
+                .start();
+        int waitTime = 9 * tasksCount * workUris.size();
+        TrOCR trocr = new TrOCR(waitTime);
+        initTimer(waitTime * 1000L);
         for (int i = 0; i < workUris.size(); i++) {
             int finalI = i;
             if (!isIIEnabled) {
@@ -511,6 +607,19 @@ public class CheckActivity extends AppCompatActivity {
                 trocr.recognizeTextBlocks(bitmap, new SimpleCallback<List<String>>() {
                     @Override
                     public void onLoad(List<String> data) {
+                        if (finalI == workUris.size() - 1) {
+                            timer.cancel();
+                            waitAppBarLayout.animate()
+                                    .translationY(-waitAppBarLayout.getHeight())
+                                    .setDuration(300)
+                                    .withEndAction(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            waitAppBarLayout.setVisibility(View.GONE);
+                                        }
+                                    })
+                                    .start();
+                        }
                         HashMap<Integer, String> answersMap = null;
                         if (data != null && !data.isEmpty()) answersMap = parseRecognizedText(data);
                         createRecTable(tasksCount, finalI, answersMap);
@@ -528,6 +637,27 @@ public class CheckActivity extends AppCompatActivity {
         });
     }
 
+    private void initTimer(long time) {
+        if (timer != null) timer.cancel();
+        timer = new CountDownTimer(time, 1000) {
+            @SuppressLint("SetTextI18n")
+            @Override
+            public void onTick(long millisUntilFinished) {
+                long minutes = (millisUntilFinished / 1000) / 60;
+                long seconds = (millisUntilFinished / 1000) % 60;
+                String timeText = String.format(Locale.getDefault(), "%d:%02d", minutes, seconds);
+                remainingTime.setText("Примерное время ожидания: " + timeText);
+            }
+
+            @Override
+            public void onFinish() {
+                initTimer(10000L);
+            }
+        };
+
+        timer.start();
+    }
+
     @SuppressLint("SetTextI18n")
     public void createRecTable(int tasksCount, int i, @Nullable HashMap<Integer, String> answersMap) {
         if (k == 3) {
@@ -542,12 +672,12 @@ public class CheckActivity extends AppCompatActivity {
             k = 0;
         }
         GridLayout mergedRow = (GridLayout) getLayoutInflater().inflate(R.layout.table_recognized_text_merged_row, null);
-        ((TextView) mergedRow.findViewById(R.id.work_name)).setText("Работа №" + (i + 1));
+        ((EditText) mergedRow.findViewById(R.id.work_name_input)).setText("Работа №" + (i + 1));
         recTextTable.addView(mergedRow);
         for (int j = 1; j <= tasksCount; j++) {
             GridLayout row = (GridLayout) getLayoutInflater().inflate(R.layout.table_recognized_text_row, null);
             ((TextView) row.findViewById(R.id.rec_task_num)).setText(j + "");
-            String answer = (answersMap != null) ? answersMap.get(j).replace("null", "") : "";
+            String answer = (answersMap != null && answersMap.get(j) != null) ? answersMap.get(j).replace("null", "") : "";
             ((EditText) row.findViewById(R.id.rec_answer_input)).setText(answer);
             recTextTable.addView(row);
         }
@@ -559,7 +689,7 @@ public class CheckActivity extends AppCompatActivity {
 
         class GroupData {
             List<Integer> tasks;
-            Map<Integer, String> wrongsKey; // task -> wrongAnswer
+            Map<Integer, String> wrongsKey;
             Set<String> works = new HashSet<>();
             double score;
 
@@ -662,7 +792,6 @@ public class CheckActivity extends AppCompatActivity {
         double maxTotalWeight = answersMap.values().stream()
                 .mapToDouble(p -> p.second)
                 .sum();
-        double averageTaskWeight = maxTotalWeight / answersMap.size();
         for (GroupData group : finalGroups) {
             Map<String, Object> groupInfo = new HashMap<>();
             List<String> works = new ArrayList<>(group.works);
@@ -670,7 +799,7 @@ public class CheckActivity extends AppCompatActivity {
             groupInfo.put("works", works);
             groupInfo.put("size", works.size());
             groupInfo.put("tasks", group.tasks);
-            String probability = getProbability(works.size(), group.score, averageTaskWeight);
+            int probability = getProbability(works.size(), group.score, maxTotalWeight);
             groupInfo.put("probability", probability);
 
             result.put(groupId++, groupInfo);
@@ -678,19 +807,8 @@ public class CheckActivity extends AppCompatActivity {
         return result;
     }
 
-    public String getProbability(int groupSize, double totalWeight, double averageTaskWeight) {
-        String probability;
-        if (groupSize >= 5) {
-            probability = "Высокая";
-        } else if (groupSize == 4) {
-            if (totalWeight >= averageTaskWeight * 3) probability = "Высокая";
-            else probability = "Средняя";
-        } else {
-            if (totalWeight >= averageTaskWeight * 5) probability = "Высокая";
-            else if (totalWeight >= averageTaskWeight * 3) probability = "Средняя";
-            else probability = "Низкая";
-        }
-        return probability;
+    public int getProbability(int groupSize, double totalWeight, double maxTotalWeight) {
+        return (int) Math.min(Math.round((totalWeight / maxTotalWeight + 0.1 * (groupSize - 2)) * 100), 100);
     }
 
     @SuppressLint("SetTextI18n")
@@ -701,6 +819,8 @@ public class CheckActivity extends AppCompatActivity {
         }
         checkWorksLayout.setVisibility(VISIBLE);
         resultsTable.removeAllViews();
+        gradesDistributionTable.removeAllViews();
+        tasksCompletingTable.removeAllViews();
         cheatersTable.removeAllViews();
         if (cardGone) templateSaveCard.setVisibility(GONE);
 
@@ -745,22 +865,25 @@ public class CheckActivity extends AppCompatActivity {
         }
         header.addView(getLayoutInflater().inflate(R.layout.table_results_header_end, null));
         Map<String, Map<Integer, String>> studentAnswers = new HashMap<>();
+        HashMap<String, Integer> gradesMap = new HashMap<>();
+        HashMap<Pair<Integer, Double>, Integer> tasksMap = new HashMap<>();
         for (int i = 1; i <= workUris.size(); i++) {
             Map<Integer, String> answers = new HashMap<>();
             androidx.gridlayout.widget.GridLayout row = (androidx.gridlayout.widget.GridLayout) getLayoutInflater().inflate(R.layout.table_results_row_main, null);
             row.setColumnCount(tasksCount + 2);
-            ((TextView) row.findViewById(R.id.res_work_name)).setText("Работа №" + i);
             double pointsSum = 0.0;
 
             int tableIndex = (i - 1) / 3;
             int workOffset = (i - 1) % 3;
             androidx.gridlayout.widget.GridLayout workTable = (androidx.gridlayout.widget.GridLayout) recognizedTextTablesLayout.getChildAt(tableIndex);
             int workRowIndex = 1 + workOffset * (tasksCount + 1);
+            String workName = ((EditText) workTable.getChildAt(workRowIndex).findViewById(R.id.work_name_input)).getText().toString();
+            ((TextView) row.findViewById(R.id.res_work_name)).setText(workName);
             for (int t = 1; t <= tasksCount; t++) {
                 EditText answerInput = workTable.getChildAt(workRowIndex + t).findViewById(R.id.rec_answer_input);
                 String recognizedAnswer = answerInput.getText().toString().trim();
                 String recAnswerForCheating = answerInput.getText().toString().trim();
-                androidx.gridlayout.widget.GridLayout taskElement = (androidx.gridlayout.widget.GridLayout) getLayoutInflater().inflate(R.layout.table_results_row_task, null);
+                View taskElement = getLayoutInflater().inflate(R.layout.table_results_row_task, null);
                 Answer answer = (Answer) answersMapForCheck.get(t).get(0);
                 String rightAnswer = answer.getRightAnswer();
                 boolean orderMatters = answer.getOrderMatters() == 1;
@@ -784,18 +907,21 @@ public class CheckActivity extends AppCompatActivity {
                 ((TextView) taskElement.findViewById(R.id.res_points)).setText(points + "");
                 pointsSum += points;
                 row.addView(taskElement);
+                Pair<Integer, Double> key = new Pair<>(t, points);
+                if (points != 0) tasksMap.put(key, tasksMap.getOrDefault(key, 0) + 1);
                 answers.put(t, recAnswerForCheating);
             }
-            studentAnswers.put("Работа №" + i, answers);
+            studentAnswers.put(workName, answers);
 
-            androidx.gridlayout.widget.GridLayout rowEnd = (androidx.gridlayout.widget.GridLayout) getLayoutInflater().inflate(R.layout.table_results_row_end, null);
+            View rowEnd = getLayoutInflater().inflate(R.layout.table_results_row_end, null);
             ((TextView) rowEnd.findViewById(R.id.points_sum)).setText(pointsSum + "");
-            for (int j = 1; j <= gradesTable.getChildCount(); j++) {
-                androidx.gridlayout.widget.GridLayout gradeRow = (androidx.gridlayout.widget.GridLayout) gradesTable.getChildAt(j);
+            for (int j = 1; j < gradesTable.getChildCount(); j++) {
+                View gradeRow = gradesTable.getChildAt(j);
                 double min = Double.parseDouble(((EditText) gradeRow.findViewById(R.id.min_points_input)).getText().toString());
                 double max = Double.parseDouble(((EditText) gradeRow.findViewById(R.id.max_points_input)).getText().toString());
                 if (min <= pointsSum && pointsSum <= max) {
                     String grade = ((TextView) gradeRow.findViewById(R.id.grade_view)).getText().toString();
+                    gradesMap.put(grade, gradesMap.getOrDefault(grade, 0) + 1);
                     ((TextView) rowEnd.findViewById(R.id.mark)).setText(grade);
                     break;
                 }
@@ -804,13 +930,137 @@ public class CheckActivity extends AppCompatActivity {
             row.addView(rowEnd);
             resultsTable.addView(row);
         }
+        gradesDistributionTable.addView(getLayoutInflater().inflate(R.layout.table_grades_distribution_header, null));
+        ArrayList<PieEntry> pieEntries = new ArrayList<>();
+        int percentagesSum = 0;
+        for (int i = 1; i < gradesTable.getChildCount(); i++) {
+            View gradeRow = getLayoutInflater().inflate(R.layout.table_grades_distribution_row, null);
+            String grade = ((TextView) gradesTable.getChildAt(i).findViewById(R.id.grade_view)).getText().toString();
+            ((TextView) gradeRow.findViewById(R.id.grade_dist)).setText(grade);
+            Integer pupilsGraded = gradesMap.getOrDefault(grade, 0);
+            pieEntries.add(new PieEntry(pupilsGraded, grade));
+            ((TextView) gradeRow.findViewById(R.id.pupils_graded)).setText(pupilsGraded + "");
+            if (i != gradesTable.getChildCount() - 1) {
+                int pupilsPercentage = Math.round((float) pupilsGraded / workUris.size() * 100);
+                percentagesSum += pupilsPercentage;
+                ((TextView) gradeRow.findViewById(R.id.pupils_percentage)).setText(pupilsPercentage + "%");
+            }
+            else ((TextView) gradeRow.findViewById(R.id.pupils_percentage)).setText((100 - percentagesSum) + "%");
+            gradesDistributionTable.addView(gradeRow);
+        }
+        Typeface typeface = ResourcesCompat.getFont(this, R.font.roboto_bold);
+        PieDataSet pieDataSet = new PieDataSet(pieEntries, null);
+        pieDataSet.setColors(ColorTemplate.MATERIAL_COLORS);
+        pieDataSet.setValueTextColor(Color.WHITE);
+        pieDataSet.setValueTextSize(16);
+        pieDataSet.setValueTypeface(typeface);
+        PieData pieData = new PieData(pieDataSet);
+        pieData.setValueFormatter(new ValueFormatter() {
+            @Override
+            public String getFormattedValue(float value) {
+                return String.valueOf((int) value);
+            }
+        });
+        Legend legend = gradesDistributionChart.getLegend();
+        legend.setTextColor(Color.WHITE);
+        legend.setTextSize(13);
+        legend.setTypeface(typeface);
+        legend.setHorizontalAlignment(Legend.LegendHorizontalAlignment.CENTER);
+        gradesDistributionChart.setData(pieData);
+        gradesDistributionChart.setExtraOffsets(0, 0, 0, -8);
+        gradesDistributionChart.getDescription().setEnabled(false);
+        gradesDistributionChart.setDrawHoleEnabled(false);
+        gradesDistributionChart.setRotationEnabled(false);
+        gradesDistributionChart.invalidate();
+
+        tasksCompletingTable.addView(getLayoutInflater().inflate(R.layout.table_tasks_comleting_header, null));
+        List<Pair<Integer, Double>> keys = new ArrayList<>();
+        for (int i = 1; i < answersTable.getChildCount(); i++) {
+            View row = answersTable.getChildAt(i);
+            if (((Spinner) row.findViewById(R.id.check_method_dropdown)).getSelectedItemPosition() == 0) {
+                double points = Double.parseDouble(((EditText) row.findViewById(R.id.points_input)).getText().toString());
+                keys.add(new Pair<>(i, points));
+            }
+            else {
+                androidx.gridlayout.widget.GridLayout complexGradingTable = row.findViewById(R.id.complex_grading_table);
+                for (int j = complexGradingTable.getChildCount() - 2; j >= 1; j--) {
+                    double points = Double.parseDouble(((EditText) complexGradingTable.getChildAt(j).findViewById(R.id.complex_points_input)).getText().toString());
+                    keys.add(new Pair<>(i, points));
+                }
+            }
+        }
+        int prevTask = 0;
+        ArrayList<Entry> entries = new ArrayList<>();
+        int prevPercentage = 0;
+        for (int i = 0; i < keys.size(); i++) {
+            View taskRow = getLayoutInflater().inflate(R.layout.table_tasks_comleting_row, null);
+            Pair<Integer, Double> key = keys.get(i);
+            ((TextView) taskRow.findViewById(R.id.points)).setText(key.second + "");
+            int pupilsCompleted = tasksMap.getOrDefault(key, 0);
+            ((TextView) taskRow.findViewById(R.id.pupils_completed)).setText(pupilsCompleted + "");
+            int pupilsPercentage = Math.round((float) pupilsCompleted / workUris.size() * 100);
+            ((TextView) taskRow.findViewById(R.id.pupils_comp_percentage)).setText(pupilsPercentage + "%");
+            if (prevTask == 0) ((TextView) taskRow.findViewById(R.id.comp_task_num)).setText(key.first + "");
+            else if (key.first != prevTask) {
+                entries.add(new Entry(prevTask, prevPercentage));
+                ((TextView) taskRow.findViewById(R.id.comp_task_num)).setText(key.first + "");
+            }
+            tasksCompletingTable.addView(taskRow);
+            prevTask = key.first;
+            prevPercentage = pupilsPercentage;
+        }
+        entries.add(new Entry(prevTask, prevPercentage));
+
+        LineDataSet lineDataSet = new LineDataSet(entries, "Процент выполнения заданий");
+        lineDataSet.setLineWidth(1.5f);
+        lineDataSet.setCircleRadius(0);
+        lineDataSet.setColor(getColor(R.color.light_green));
+        lineDataSet.setDrawValues(false);
+        XAxis xAxis = tasksCompletingChart.getXAxis();
+        xAxis.setAxisMinimum(1);
+        xAxis.setAxisMaximum(tasksCount);
+        xAxis.setLabelCount(tasksCount);
+        xAxis.setGranularity(1);
+        xAxis.setGridColor(Color.WHITE);
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setTextColor(Color.WHITE);
+        xAxis.setTextSize(13);
+        xAxis.setTypeface(typeface);
+        YAxis yAxis = tasksCompletingChart.getAxisLeft();
+        yAxis.setXOffset(10);
+        yAxis.setAxisMinimum(0);
+        yAxis.setAxisMaximum(100);
+        yAxis.setLabelCount(11, true);
+        yAxis.setGranularity(10);
+        yAxis.setGridColor(Color.WHITE);
+        yAxis.setTextColor(Color.WHITE);
+        yAxis.setTextSize(13);
+        yAxis.setTypeface(typeface);
+        legend = tasksCompletingChart.getLegend();
+        legend.setTextColor(Color.WHITE);
+        legend.setTextSize(13);
+        legend.setTypeface(typeface);
+        SquarePointRenderer squarePointRenderer = new SquarePointRenderer(tasksCompletingChart, tasksCompletingChart.getAnimator(), tasksCompletingChart.getViewPortHandler());
+        squarePointRenderer.setSquareSize(24);
+        ViewGroup.LayoutParams params = tasksCompletingChart.getLayoutParams();
+        params.width = (int) (60 * tasksCount * getResources().getDisplayMetrics().density);
+        tasksCompletingChart.setLayoutParams(params);
+        LineData lineData = new LineData(lineDataSet);
+        tasksCompletingChart.setData(lineData);
+        tasksCompletingChart.getAxisRight().setEnabled(false);
+        tasksCompletingChart.getDescription().setEnabled(false);
+        tasksCompletingChart.setExtraOffsets(0, 0, 0, 8);
+        tasksCompletingChart.setTouchEnabled(false);
+        tasksCompletingChart.setRenderer(squarePointRenderer);
+        tasksCompletingChart.invalidate();
+
         cheatersTable.addView(getLayoutInflater().inflate(R.layout.table_cheaters_header, null));
         HashMap<Integer, Map<String, Object>> cheatersGroups = detectCheaters(studentAnswers, answersPointsMap);
         if (cheatersGroups.isEmpty()) cheatersTable.addView(getLayoutInflater().inflate(R.layout.table_cheaters_merged_row, null));
         else {
             for (int i = 1; i <= cheatersGroups.size(); i++) {
                 Map<String, Object> group = cheatersGroups.get(i);
-                androidx.gridlayout.widget.GridLayout row = (androidx.gridlayout.widget.GridLayout) getLayoutInflater().inflate(R.layout.table_cheaters_row, null);
+                View row = getLayoutInflater().inflate(R.layout.table_cheaters_row, null);
                 ((TextView) row.findViewById(R.id.group_num)).setText(i + "");
                 List<String> works = (List<String>) group.get("works");
                 List<String> tasks = ((List<Integer>) group.get("tasks")).stream()
@@ -819,7 +1069,7 @@ public class CheckActivity extends AppCompatActivity {
                 ((TextView) row.findViewById(R.id.works)).setText(String.join(", ", works));
                 ((TextView) row.findViewById(R.id.group_size)).setText(group.get("size") + "");
                 ((TextView) row.findViewById(R.id.tasks_list)).setText(String.join(", ", tasks));
-                ((TextView) row.findViewById(R.id.probability)).setText(group.get("probability") + "");
+                ((TextView) row.findViewById(R.id.probability)).setText(group.get("probability") + "%");
                 cheatersTable.addView(row);
             }
         }
@@ -927,25 +1177,14 @@ public class CheckActivity extends AppCompatActivity {
         for (int col = 0; col < colCount; col++) {
             int maxLength = 0;
             for (int i = 0; i < table.getLastRowNum(); i++) {
-                String cellContent = String.valueOf(table.getRow(i).getCell(col));
+                String cellContent;
+                try {
+                    cellContent = String.valueOf(table.getRow(i).getCell(col));
+                } catch (Exception e) { continue; }
                 if (cellContent.length() > maxLength) maxLength = cellContent.length();
             }
             int baseWidth = maxLength * 300 + 300;
             columnWidths.put(col, baseWidth);
-        }
-        for (int i = 0; i < table.getNumMergedRegions(); i++) {
-            CellRangeAddress mergedRegion = table.getMergedRegion(i);
-            int firstCol = mergedRegion.getFirstColumn();
-            int lastCol = mergedRegion.getLastColumn();
-            int numCols = lastCol - firstCol + 1;
-            int totalWidth = 0;
-            for (int c = firstCol; c <= lastCol; c++) {
-                totalWidth += columnWidths.getOrDefault(c, 0);
-            }
-            int avgWidth = totalWidth / numCols;
-            for (int c = firstCol; c <= lastCol; c++) {
-                columnWidths.put(c, avgWidth);
-            }
         }
         for (Map.Entry<Integer, Integer> entry : columnWidths.entrySet()) {
             table.setColumnWidth(entry.getKey(), entry.getValue());
@@ -989,10 +1228,15 @@ public class CheckActivity extends AppCompatActivity {
         if (isOneSheetEnabled || table.getNumberOfSheets() == 0) {
             sheet = table.getSheet("Результаты");
             if (sheet == null) sheet = table.createSheet("Результаты");
-            lastRow = sheet.getLastRowNum() + 2;
-            if (lastRow == 1) lastRow -= 1;
+            lastRow = sheet.getLastRowNum() + 3;
+            if (lastRow == 2) lastRow -= 2;
         }
         else sheet = table.createSheet("Результаты " + (table.getNumberOfSheets() + 1));
+        boolean isColoringEnabled = settings.getBoolean("isColoringEnabled", true);
+        boolean isAnalysisEnabled = settings.getBoolean("isAnalysisEnabled", false);
+
+        Font whiteFont = table.createFont();
+        whiteFont.setColor(IndexedColors.WHITE.getIndex());
 
         CellStyle commonStyle = table.createCellStyle();
         commonStyle.setBorderTop(BorderStyle.MEDIUM);
@@ -1027,6 +1271,7 @@ public class CheckActivity extends AppCompatActivity {
         redBackground.setBorderLeft(BorderStyle.MEDIUM);
         redBackground.setBorderRight(BorderStyle.MEDIUM);
         redBackground.setAlignment(HorizontalAlignment.CENTER);
+        redBackground.setFont(whiteFont);
 
         Row headerRow1 = sheet.createRow(lastRow);
         lastRow++;
@@ -1076,9 +1321,12 @@ public class CheckActivity extends AppCompatActivity {
                 double points = Double.parseDouble(((TextView) taskElement.findViewById(R.id.res_points)).getText().toString());
                 double maxPoints = answersPointsMap.get(j - k).second;
                 cell.setCellValue(points);
-                if (points == 0) cell.setCellStyle(redBackground);
-                else if (points < maxPoints) cell.setCellStyle(yellowBackground);
-                else cell.setCellStyle(greenBackground);
+                if (isColoringEnabled) {
+                    if (points == 0) cell.setCellStyle(redBackground);
+                    else if (points < maxPoints) cell.setCellStyle(yellowBackground);
+                    else cell.setCellStyle(greenBackground);
+                }
+                else cell.setCellStyle(commonStyle);
                 k++;
             }
             androidx.gridlayout.widget.GridLayout end = (androidx.gridlayout.widget.GridLayout) workRow.getChildAt(tasksCount + 1);
@@ -1090,9 +1338,146 @@ public class CheckActivity extends AppCompatActivity {
             cell.setCellStyle(commonStyle);
         }
 
-        try {
-            updateColumnsWidth(sheet, tasksCount * 2 + 3);
-        } catch (Exception e) {}
+        if (isAnalysisEnabled) {
+            lastRow += workUris.size() + 2;
+            int chartStartRow = lastRow;
+            Row row = sheet.createRow(lastRow);
+            cell = row.createCell(0);
+            cell.setCellValue("Распределение оценок");
+            sheet.addMergedRegion(new CellRangeAddress(lastRow, lastRow, 0, 2));
+            cell.setCellStyle(commonStyle);
+            lastRow++;
+            row = sheet.createRow(lastRow);
+            cell = row.createCell(0);
+            cell.setCellValue("Оценка");
+            cell.setCellStyle(commonStyle);
+            cell = row.createCell(1);
+            cell.setCellValue("Кол-во учеников, получивших оценку");
+            cell.setCellStyle(commonStyle);
+            cell = row.createCell(2);
+            cell.setCellValue("Процент от общего числа учеников");
+            cell.setCellStyle(commonStyle);
+            for (int i = 1; i < gradesDistributionTable.getChildCount(); i++) {
+                View tableRow = gradesDistributionTable.getChildAt(i);
+                lastRow++;
+                row = sheet.createRow(lastRow);
+                cell = row.createCell(0);
+                cell.setCellValue(((TextView) tableRow.findViewById(R.id.grade_dist)).getText().toString());
+                cell.setCellStyle(commonStyle);
+                cell = row.createCell(1);
+                cell.setCellValue(Integer.parseInt(((TextView) tableRow.findViewById(R.id.pupils_graded)).getText().toString()));
+                cell.setCellStyle(commonStyle);
+                cell = row.createCell(2);
+                cell.setCellValue(((TextView) tableRow.findViewById(R.id.pupils_percentage)).getText().toString());
+                cell.setCellStyle(commonStyle);
+            }
+            XSSFDrawing drawing = (XSSFDrawing) sheet.createDrawingPatriarch();
+            XSSFClientAnchor anchor = drawing.createAnchor(0, 0, 0, 0, 5, chartStartRow, 11, chartStartRow + 10);
+            XSSFChart pieChart = drawing.createChart(anchor);
+            pieChart.setTitleText("Распределение оценок");
+            XDDFDataSource<String> grades = XDDFDataSourcesFactory.fromStringCellRange(
+                    (XSSFSheet) sheet, new CellRangeAddress(chartStartRow + 1, lastRow, 0, 0)
+            );
+            XDDFNumericalDataSource<Double> pupilsGraded = XDDFDataSourcesFactory.fromNumericCellRange(
+                    (XSSFSheet) sheet, new CellRangeAddress(chartStartRow + 1, lastRow, 1, 1)
+            );
+            XDDFChartData pieData = pieChart.createData(ChartTypes.PIE, null, null);
+            pieData.addSeries(grades, pupilsGraded);
+            XDDFChartLegend pieLegend = pieChart.getOrAddLegend();
+            pieLegend.setPosition(LegendPosition.BOTTOM);
+            pieLegend.setOverlay(false);
+            pieChart.plot(pieData);
+            if (lastRow > chartStartRow + 10) lastRow += 2;
+            else lastRow = chartStartRow + 12;
+            chartStartRow = lastRow;
+            row = sheet.createRow(lastRow);
+            cell = row.createCell(0);
+            cell.setCellValue("Статистика выполнения заданий");
+            sheet.addMergedRegion(new CellRangeAddress(lastRow, lastRow, 0, 3));
+            cell.setCellStyle(commonStyle);
+            lastRow++;
+            row = sheet.createRow(lastRow);
+            cell = row.createCell(0);
+            cell.setCellValue("Номер задания");
+            cell.setCellStyle(commonStyle);
+            cell = row.createCell(1);
+            cell.setCellValue("Балл");
+            cell.setCellStyle(commonStyle);
+            cell = row.createCell(2);
+            cell.setCellValue("Кол-во учеников, получивших балл");
+            cell.setCellStyle(commonStyle);
+            cell = row.createCell(3);
+            cell.setCellValue("Процент от общего числа учеников");
+            cell.setCellStyle(commonStyle);
+            List<String> taskNums = new ArrayList<>();
+            List<Integer> percentages = new ArrayList<>();
+            boolean isFirstMerge = true;
+            int firstTaskRowNum = 0;
+            for (int i = 1; i < tasksCompletingTable.getChildCount(); i++) {
+                View tableRow = tasksCompletingTable.getChildAt(i);
+                lastRow++;
+                row = sheet.createRow(lastRow);
+                cell = row.createCell(0);
+                String taskNum = ((TextView) tableRow.findViewById(R.id.comp_task_num)).getText().toString();
+                cell.setCellValue(taskNum);
+                cell.setCellStyle(commonStyle);
+                if (taskNum.isEmpty()) {
+                    if (!isFirstMerge) sheet.removeMergedRegion(sheet.getNumMergedRegions() - 1);
+                    sheet.addMergedRegion(new CellRangeAddress(firstTaskRowNum, lastRow, 0, 0));
+                    isFirstMerge = false;
+                }
+                else {
+                    taskNums.add(taskNum);
+                    if (i != 1) {
+                        String percentage = sheet.getRow(lastRow - 1).getCell(3).getStringCellValue();
+                        percentages.add(Integer.valueOf(percentage.substring(0, percentage.length() - 1)));
+                    }
+                    firstTaskRowNum = lastRow;
+                    isFirstMerge = true;
+                }
+                cell = row.createCell(1);
+                cell.setCellValue(((TextView) tableRow.findViewById(R.id.points)).getText().toString());
+                cell.setCellStyle(commonStyle);
+                cell = row.createCell(2);
+                cell.setCellValue(((TextView) tableRow.findViewById(R.id.pupils_completed)).getText().toString());
+                cell.setCellStyle(commonStyle);
+                cell = row.createCell(3);
+                cell.setCellValue(((TextView) tableRow.findViewById(R.id.pupils_comp_percentage)).getText().toString());
+                cell.setCellStyle(commonStyle);
+            }
+            String percentage = sheet.getRow(lastRow).getCell(3).getStringCellValue();
+            percentages.add(Integer.valueOf(percentage.substring(0, percentage.length() - 1)));
+            for (int i = chartStartRow; i < chartStartRow + tasksCount; i++) {
+                row = sheet.getRow(i);
+                cell = row.createCell(5);
+                cell.setCellValue(taskNums.get(i - chartStartRow));
+                cell.setCellStyle(commonStyle);
+                cell = row.createCell(6);
+                cell.setCellValue(percentages.get(i - chartStartRow));
+                cell.setCellStyle(commonStyle);
+            }
+            anchor = drawing.createAnchor(0, 0, 0, 0, 8, chartStartRow, 8 + tasksCount, chartStartRow + 10);
+            XSSFChart lineChart = drawing.createChart(anchor);
+            XDDFDataSource<String> xData = XDDFDataSourcesFactory.fromStringCellRange(
+                    (XSSFSheet) sheet, new CellRangeAddress(chartStartRow, chartStartRow + tasksCount, 5, 5)
+            );
+            XDDFNumericalDataSource<Double> yData = XDDFDataSourcesFactory.fromNumericCellRange(
+                    (XSSFSheet) sheet, new CellRangeAddress(chartStartRow , chartStartRow + tasksCount, 6, 6)
+            );
+            XDDFCategoryAxis xAxis = lineChart.createCategoryAxis(AxisPosition.BOTTOM);
+            XDDFValueAxis yAxis = lineChart.createValueAxis(AxisPosition.LEFT);
+            yAxis.setNumberFormat("#\"%\"");
+            XDDFLineChartData lineData = (XDDFLineChartData) lineChart.createData(ChartTypes.LINE, xAxis, yAxis);
+            XDDFLineChartData.Series series = (XDDFLineChartData.Series) lineData.addSeries(xData, yData);
+            series.setTitle("Процент выполнения заданий", null);
+            series.setMarkerStyle(MarkerStyle.SQUARE);
+            XDDFChartLegend lineLegend = lineChart.getOrAddLegend();
+            lineLegend.setPosition(LegendPosition.BOTTOM);
+            lineLegend.setOverlay(false);
+            lineChart.plot(lineData);
+        }
+
+        updateColumnsWidth(sheet, tasksCount * 2 + 3);
 
         try (OutputStream outputStream = this.getContentResolver().openOutputStream(fileUri)) {
             if (outputStream != null) {

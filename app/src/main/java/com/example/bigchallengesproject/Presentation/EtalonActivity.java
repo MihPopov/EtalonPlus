@@ -165,6 +165,50 @@ public class EtalonActivity extends AppCompatActivity {
                                 while (d != 0) {
                                     View row = getLayoutInflater().inflate(R.layout.table_answers_row, null);
                                     ((TextView) row.findViewById(R.id.task_num)).setText(answersEtalonTable.getChildCount() + "");
+                                    Spinner checkMethodsDropdown = row.findViewById(R.id.check_method_dropdown);
+                                    androidx.gridlayout.widget.GridLayout complexGradingTable = row.findViewById(R.id.complex_grading_table);
+                                    CardView editComplexGradingTableCard = row.findViewById(R.id.edit_complex_grading_table_card);
+                                    checkMethodsDropdown.setAdapter(checkMethodsAdapter);
+
+                                    ((LinearLayout) editComplexGradingTableCard.getChildAt(0)).getChildAt(0).setOnClickListener(new View.OnClickListener() {
+                                        @Override
+                                        public void onClick(View v) {
+                                            complexGradingTable.addView(getLayoutInflater().inflate(R.layout.table_complex_grading_row, null), complexGradingTable.getChildCount() - 1);
+                                        }
+                                    });
+                                    ((LinearLayout) editComplexGradingTableCard.getChildAt(0)).getChildAt(1).setOnClickListener(new View.OnClickListener() {
+                                        @Override
+                                        public void onClick(View v) {
+                                            if (complexGradingTable.getChildCount() > 4) complexGradingTable.removeViewAt(complexGradingTable.getChildCount() - 2);
+                                        }
+                                    });
+
+                                    checkMethodsDropdown.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                                        @SuppressLint("InflateParams")
+                                        @Override
+                                        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                                            complexGradingTable.removeAllViews();
+                                            if (position == 1) {
+                                                complexGradingTable.setVisibility(VISIBLE);
+                                                editComplexGradingTableCard.setVisibility(VISIBLE);
+
+                                                complexGradingTable.addView(getLayoutInflater().inflate(R.layout.table_complex_grading_header, null));
+                                                View firstRow = getLayoutInflater().inflate(R.layout.table_complex_grading_row, null);
+                                                ((EditText) firstRow.findViewById(R.id.min_mistakes_input)).setText("0");
+                                                ((EditText) firstRow.findViewById(R.id.complex_points_input)).setText(((EditText) row.findViewById(R.id.points_input)).getText().toString().trim());
+                                                complexGradingTable.addView(firstRow);
+                                                complexGradingTable.addView(getLayoutInflater().inflate(R.layout.table_complex_grading_row, null));
+                                                complexGradingTable.addView(getLayoutInflater().inflate(R.layout.table_complex_grading_merged_row, null));
+                                            }
+                                            else {
+                                                complexGradingTable.setVisibility(GONE);
+                                                editComplexGradingTableCard.setVisibility(GONE);
+                                            }
+                                        }
+
+                                        @Override
+                                        public void onNothingSelected(AdapterView<?> parent) {}
+                                    });
                                     answersEtalonTable.addView(row);
                                     d--;
                                 }

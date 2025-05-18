@@ -9,6 +9,68 @@
     android:background="@color/dark_green"
     tools:context=".Presentation.CheckActivity">
 
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/wait_app_bar_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:translationY="-100dp"
+        android:visibility="gone">
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="-9dp"
+            app:cardBackgroundColor="@color/white"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="6dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="9dp"
+                android:padding="10dp">
+
+                <ImageView
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_marginEnd="6dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/clock"
+                    app:tint="@color/dark_green" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="5dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Пожалуйста, подождите, пока текст работ не будет распознан"
+                        android:textColor="@color/dark_green"
+                        android:textSize="16sp" />
+
+                    <TextView
+                        android:id="@+id/remaining_time"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:text="Примерное время ожидания: 0:20"
+                        android:textColor="@color/dark_green"
+                        android:textSize="15sp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+    </com.google.android.material.appbar.AppBarLayout>
+
     <ScrollView
         android:id="@+id/scrollview"
         android:layout_width="match_parent"
@@ -593,6 +655,80 @@
                             android:layout_height="wrap_content"
                             android:background="@color/dark_green"
                             app:columnCount="1" />
+
+                    </LinearLayout>
+
+                </HorizontalScrollView>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="10dp"
+                    android:fontFamily="@font/roboto_bold"
+                    android:text="Распределение оценок"
+                    android:textColor="@color/white"
+                    android:textSize="18sp" />
+
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_marginTop="10dp"
+                        android:orientation="horizontal">
+
+                        <androidx.gridlayout.widget.GridLayout
+                            android:id="@+id/grades_distribution_table"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@color/dark_green"
+                            app:columnCount="1" />
+
+                        <com.github.mikephil.charting.charts.PieChart
+                            android:id="@+id/grades_distribution_chart"
+                            android:layout_width="300dp"
+                            android:layout_height="280dp"
+                            android:layout_marginStart="10dp" />
+
+                    </LinearLayout>
+
+                </HorizontalScrollView>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="5dp"
+                    android:fontFamily="@font/roboto_bold"
+                    android:text="Статистика выполнения заданий"
+                    android:textColor="@color/white"
+                    android:textSize="18sp" />
+
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginTop="10dp">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:orientation="horizontal">
+
+                        <androidx.gridlayout.widget.GridLayout
+                            android:id="@+id/tasks_completing_table"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@color/dark_green"
+                            app:columnCount="1" />
+
+                        <com.github.mikephil.charting.charts.LineChart
+                            android:id="@+id/tasks_completing_chart"
+                            android:layout_width="400dp"
+                            android:layout_height="280dp"
+                            android:layout_marginStart="10dp" />
 
                     </LinearLayout>
 
