@@ -11,7 +11,7 @@
     <TextView
         android:id="@+id/rec_task_num"
         android:layout_width="130dp"
-        android:layout_height="30dp"
+        android:layout_height="40dp"
         android:gravity="center"
         android:background="@color/dark_green"
         android:layout_marginBottom="1dp"
@@ -24,7 +24,7 @@
 
     <androidx.cardview.widget.CardView
         android:layout_width="223dp"
-        android:layout_height="30dp"
+        android:layout_height="40dp"
         android:layout_marginBottom="1dp"
         app:layout_row="0"
         app:layout_column="1"

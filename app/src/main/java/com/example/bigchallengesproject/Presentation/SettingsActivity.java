@@ -30,7 +30,7 @@ public class SettingsActivity extends AppCompatActivity {
 
     androidx.gridlayout.widget.GridLayout gradesSystemTable;
     TextInputEditText tableNameInput, symbolsToIgnoreInput;
-    MaterialSwitch iiSwitch, oneTableSwitch, oneSheetSwitch, coloringSwitch, analysisSwitch;
+    MaterialSwitch aiSwitch, oneTableSwitch, oneSheetSwitch, coloringSwitch, analysisSwitch;
     LinearLayout oneSheetLayout, symbolsToIgnoreLayout;
 
     DatabaseHelper dbHelper;
@@ -47,7 +47,7 @@ public class SettingsActivity extends AppCompatActivity {
         tableNameInput = findViewById(R.id.table_name_input);
         symbolsToIgnoreLayout = findViewById(R.id.symbols_to_ignore_layout);
         symbolsToIgnoreInput = findViewById(R.id.symbols_to_ignore_input);
-        iiSwitch = findViewById(R.id.ii_switch);
+        aiSwitch = findViewById(R.id.ai_switch);
         oneTableSwitch = findViewById(R.id.one_table_switch);
         oneSheetLayout = findViewById(R.id.one_sheet_layout);
         oneSheetSwitch = findViewById(R.id.one_sheet_switch);
@@ -57,11 +57,11 @@ public class SettingsActivity extends AppCompatActivity {
         dbHelper = new DatabaseHelper(this);
         settings = getSharedPreferences("Preferences", MODE_PRIVATE);
 
-        boolean isIIEnabled = settings.getBoolean("isIIEnabled", true);
-        iiSwitch.setChecked(isIIEnabled);
-        if (!isIIEnabled) symbolsToIgnoreLayout.setVisibility(GONE);
-        symbolsToIgnoreInput.setText(settings.getString("symbolsToIgnore", ""));
-        iiSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        boolean isAIEnabled = settings.getBoolean("isAIEnabled", true);
+        aiSwitch.setChecked(isAIEnabled);
+        if (!isAIEnabled) symbolsToIgnoreLayout.setVisibility(GONE);
+        symbolsToIgnoreInput.setText(settings.getString("symbolsToIgnore", "()[].=;"));
+        aiSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) symbolsToIgnoreLayout.setVisibility(VISIBLE);
@@ -114,7 +114,7 @@ public class SettingsActivity extends AppCompatActivity {
                     .collect(Collectors.joining());
             boolean isOneTableEnabled = oneTableSwitch.isChecked();
             SharedPreferences.Editor prefEditor = settings.edit();
-            prefEditor.putBoolean("isIIEnabled", iiSwitch.isChecked());
+            prefEditor.putBoolean("isAIEnabled", aiSwitch.isChecked());
             prefEditor.putString("symbolsToIgnore", symbolsToIgnore);
             prefEditor.putString("tableName", tableName);
             prefEditor.putBoolean("isOneTableEnabled", isOneTableEnabled);

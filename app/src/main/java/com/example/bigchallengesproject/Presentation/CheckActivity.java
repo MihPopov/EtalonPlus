@@ -22,6 +22,7 @@ import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.util.Pair;
 import android.view.View;
 import android.view.ViewGroup;
@@ -46,9 +47,11 @@ import androidx.gridlayout.widget.GridLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.chaquo.python.Python;
+import com.chaquo.python.android.AndroidPlatform;
 import com.example.bigchallengesproject.Common.DatabaseHelper;
 import com.example.bigchallengesproject.Common.SimpleCallback;
-import com.example.bigchallengesproject.Common.TrOCR;
+import com.example.bigchallengesproject.Common.AIService;
 import com.example.bigchallengesproject.Data.Answer;
 import com.example.bigchallengesproject.Data.ComplexCriteria;
 import com.example.bigchallengesproject.Data.Etalon;
@@ -115,6 +118,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class CheckActivity extends AppCompatActivity {
@@ -123,6 +127,9 @@ public class CheckActivity extends AppCompatActivity {
     private static final int CAPTURE_IMAGE_REQUEST = 2;
     private static final int PICK_ETALON_IMAGE_REQUEST = 3;
     private static final int CAMERA_PERMISSION_CODE = 100;
+    private static final Pattern NUMBER_PATTERN = Pattern.compile("^-?\\d+([.,]\\d+)?$");
+    private static final Pattern RU_LETTERS = Pattern.compile("^[а-яА-ЯёЁ]+$");
+    private static final Pattern EN_LETTERS = Pattern.compile("^[a-zA-Z]+$");
     int k = 0;
     String[] checkMethods = new String[]{"Полное совпадение", "Поэлементное совпадение"};
 
@@ -409,7 +416,8 @@ public class CheckActivity extends AppCompatActivity {
             ((LinearLayout) editComplexGradingTableCard.getChildAt(0)).getChildAt(1).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if (complexGradingTable.getChildCount() > 4) complexGradingTable.removeViewAt(complexGradingTable.getChildCount() - 2);
+                    if (complexGradingTable.getChildCount() > 4)
+                        complexGradingTable.removeViewAt(complexGradingTable.getChildCount() - 2);
                 }
             });
 
@@ -429,25 +437,27 @@ public class CheckActivity extends AppCompatActivity {
                         complexGradingTable.addView(firstRow);
                         complexGradingTable.addView(getLayoutInflater().inflate(R.layout.table_complex_grading_row, null));
                         complexGradingTable.addView(getLayoutInflater().inflate(R.layout.table_complex_grading_merged_row, null));
-                    }
-                    else {
+                    } else {
                         complexGradingTable.setVisibility(GONE);
                         editComplexGradingTableCard.setVisibility(GONE);
                     }
                 }
 
                 @Override
-                public void onNothingSelected(AdapterView<?> parent) {}
+                public void onNothingSelected(AdapterView<?> parent) {
+                }
             });
 
             answersTable.addView(row);
         }
         tasksCountInput.addTextChangedListener(new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
 
             @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
 
             @Override
             public void afterTextChanged(Editable s) {
@@ -473,7 +483,8 @@ public class CheckActivity extends AppCompatActivity {
                             ((LinearLayout) editComplexGradingTableCard.getChildAt(0)).getChildAt(1).setOnClickListener(new View.OnClickListener() {
                                 @Override
                                 public void onClick(View v) {
-                                    if (complexGradingTable.getChildCount() > 4) complexGradingTable.removeViewAt(complexGradingTable.getChildCount() - 2);
+                                    if (complexGradingTable.getChildCount() > 4)
+                                        complexGradingTable.removeViewAt(complexGradingTable.getChildCount() - 2);
                                 }
                             });
 
@@ -493,28 +504,28 @@ public class CheckActivity extends AppCompatActivity {
                                         complexGradingTable.addView(firstRow);
                                         complexGradingTable.addView(getLayoutInflater().inflate(R.layout.table_complex_grading_row, null));
                                         complexGradingTable.addView(getLayoutInflater().inflate(R.layout.table_complex_grading_merged_row, null));
-                                    }
-                                    else {
+                                    } else {
                                         complexGradingTable.setVisibility(GONE);
                                         editComplexGradingTableCard.setVisibility(GONE);
                                     }
                                 }
 
                                 @Override
-                                public void onNothingSelected(AdapterView<?> parent) {}
+                                public void onNothingSelected(AdapterView<?> parent) {
+                                }
                             });
 
                             answersTable.addView(row);
                             d--;
                         }
-                    }
-                    else {
+                    } else {
                         while (d != 0 && answersTable.getChildCount() > 2) {
                             answersTable.removeViewAt(answersTable.getChildCount() - 1);
                             d++;
                         }
                     }
-                } catch (NumberFormatException ignored) {}
+                } catch (NumberFormatException ignored) {
+                }
             }
         });
         gradesTable.removeAllViews();
@@ -527,8 +538,7 @@ public class CheckActivity extends AppCompatActivity {
                 ((TextView) row.findViewById(R.id.grade_view)).setText(grade.getGrade());
                 gradesTable.addView(row);
             }
-        }
-        else {
+        } else {
             List<String> gradesSystem = dbHelper.getGradesSystem();
             for (String grade : gradesSystem) {
                 androidx.gridlayout.widget.GridLayout row = (androidx.gridlayout.widget.GridLayout) getLayoutInflater().inflate(R.layout.table_grades_row, null);
@@ -542,30 +552,6 @@ public class CheckActivity extends AppCompatActivity {
                 scrollView.smoothScrollTo(0, tablesPage.getBottom());
             }
         });
-    }
-
-    private HashMap<Integer, String> parseRecognizedText(List<String> recognizedText) {
-        HashMap<Integer, String> answersMap = new HashMap<>();
-        String symbolsToIgnore = settings.getString("symbolsToIgnore", "");
-        for (String block : recognizedText) {
-            if (!block.isEmpty()) {
-                int spaceIndex = block.indexOf(" ");
-                if (spaceIndex != -1) {
-                    try {
-                        int taskNumber = Integer.parseInt(block.substring(0, spaceIndex).trim());
-                        String answer = block.substring(spaceIndex + 1).trim();
-                        StringBuilder cleanedAnswer = new StringBuilder();
-                        for (char c : answer.toCharArray()) {
-                            if (symbolsToIgnore.indexOf(c) == -1) cleanedAnswer.append(c);
-                        }
-                        answersMap.put(taskNumber, cleanedAnswer.toString());
-                    } catch (NumberFormatException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }
-        return answersMap;
     }
 
     @SuppressLint("SetTextI18n")
@@ -585,28 +571,29 @@ public class CheckActivity extends AppCompatActivity {
         recTextTable.addView(getLayoutInflater().inflate(R.layout.table_recognized_text_header, null));
         recognizedTextTablesLayout.addView(recTextTable);
         int tasksCount = Integer.parseInt(tasksCountInput.getText().toString());
-        boolean isIIEnabled = settings.getBoolean("isIIEnabled", true);
+        boolean isAIEnabled = settings.getBoolean("isAIEnabled", true);
+        String taskTypes = getTaskTypes();
         k = 0;
         waitAppBarLayout.setVisibility(View.VISIBLE);
         waitAppBarLayout.animate()
                 .translationY(0)
                 .setDuration(300)
                 .start();
-        int waitTime = 9 * tasksCount * workUris.size();
-        TrOCR trocr = new TrOCR(waitTime);
+        int waitTime = 2 * tasksCount * workUris.size();
+        AIService aiService = new AIService(this);
         initTimer(waitTime * 1000L);
         for (int i = 0; i < workUris.size(); i++) {
             int finalI = i;
-            if (!isIIEnabled) {
+            if (!isAIEnabled) {
                 createRecTable(tasksCount, finalI, null);
                 continue;
             }
             Uri imageUri = workUris.get(i);
             try {
                 Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
-                trocr.recognizeTextBlocks(bitmap, new SimpleCallback<List<String>>() {
+                aiService.recognizeTextBlocks(bitmap, new SimpleCallback<HashMap<Integer, String>>() {
                     @Override
-                    public void onLoad(List<String> data) {
+                    public void onLoad(HashMap<Integer, String> answersMap) {
                         if (finalI == workUris.size() - 1) {
                             timer.cancel();
                             waitAppBarLayout.animate()
@@ -620,11 +607,9 @@ public class CheckActivity extends AppCompatActivity {
                                     })
                                     .start();
                         }
-                        HashMap<Integer, String> answersMap = null;
-                        if (data != null && !data.isEmpty()) answersMap = parseRecognizedText(data);
                         createRecTable(tasksCount, finalI, answersMap);
                     }
-                });
+                }, taskTypes, settings.getString("symbolsToIgnore", "()[].=;"));
             } catch (Exception e) {
                 throw new Exception(e);
             }
@@ -637,7 +622,21 @@ public class CheckActivity extends AppCompatActivity {
         });
     }
 
-    private void initTimer(long time) {
+    public String getTaskTypes() {
+        StringBuilder res = new StringBuilder();
+        for (int i = 1; i < answersTable.getChildCount(); i++) {
+            View row = answersTable.getChildAt(i);
+            String rightAnswer = ((EditText) row.findViewById(R.id.right_answer_input)).getText().toString();
+            res.append(i).append(" ");
+            if (NUMBER_PATTERN.matcher(rightAnswer).matches()) res.append("число");
+            else if (RU_LETTERS.matcher(rightAnswer).matches()) res.append("русские буквы");
+            else if (EN_LETTERS.matcher(rightAnswer).matches()) res.append("английские буквы");
+            res.append("\n");
+        }
+        return res.toString();
+    }
+
+    public void initTimer(long time) {
         if (timer != null) timer.cancel();
         timer = new CountDownTimer(time, 1000) {
             @SuppressLint("SetTextI18n")
