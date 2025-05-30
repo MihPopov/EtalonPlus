@@ -48,6 +48,7 @@
                     android:orientation="vertical">
 
                     <TextView
+                        android:id="@+id/waiting_text"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Пожалуйста, подождите, пока текст работ не будет распознан"
@@ -184,20 +185,19 @@
 
                 <androidx.cardview.widget.CardView
                     android:id="@+id/camera_card"
-                    android:layout_width="0dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:layout_marginStart="4dp"
                     android:layout_marginTop="6dp"
                     android:layout_marginEnd="6dp"
                     android:layout_marginBottom="6dp"
-                    android:layout_weight="1"
                     app:cardBackgroundColor="@color/white"
                     app:cardCornerRadius="12dp"
                     app:cardElevation="6dp">
 
                     <LinearLayout
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:gravity="center"
                         android:orientation="horizontal"
@@ -226,7 +226,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="20dp"
+                android:layout_marginStart="15dp"
                 android:layout_marginTop="5dp"
                 android:fontFamily="@font/roboto_bold"
                 android:hint="Загруженные работы"
@@ -236,10 +236,10 @@
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recycler_view_works"
                 android:layout_width="match_parent"
-                android:layout_height="370dp"
-                android:layout_marginStart="20dp"
+                android:layout_height="450dp"
+                android:layout_marginStart="15dp"
                 android:layout_marginTop="5dp"
-                android:layout_marginEnd="20dp"
+                android:layout_marginEnd="15dp"
                 android:background="@color/green_list_bg">
 
             </androidx.recyclerview.widget.RecyclerView>
@@ -452,7 +452,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:fontFamily="@font/roboto_bold"
-                    android:text="Правильные ответы на задания и баллы"
+                    android:text="Правильные ответы на задания и оценивание"
                     android:textColor="@color/white"
                     android:textSize="18sp" />
 
@@ -468,6 +468,37 @@
 
                         <androidx.gridlayout.widget.GridLayout
                             android:id="@+id/answers_table"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@color/light_green"
+                            app:columnCount="1" />
+
+                    </LinearLayout>
+
+                </HorizontalScrollView>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="10dp"
+                    android:fontFamily="@font/roboto_bold"
+                    android:text="Задания с развёрнутым ответом"
+                    android:textColor="@color/white"
+                    android:textSize="18sp" />
+
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginTop="10dp">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:orientation="horizontal" >
+
+                        <androidx.gridlayout.widget.GridLayout
+                            android:id="@+id/detailed_answers_table"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:background="@color/light_green"
@@ -563,9 +594,9 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:fontFamily="@font/roboto_bold"
-                    android:text="Распознанные ответы на задания. Исправьте ошибки, если обнаружите"
+                    android:text="Распознанные ответы на задания с кратким ответом. Исправьте ошибки, если обнаружите"
                     android:textColor="@color/white"
-                    android:textSize="18sp" />
+                    android:textSize="17sp" />
 
                 <HorizontalScrollView
                     android:layout_width="match_parent"
@@ -659,6 +690,38 @@
                     </LinearLayout>
 
                 </HorizontalScrollView>
+
+                <LinearLayout
+                    android:id="@+id/results_detailed_layout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="15dp"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:fontFamily="@font/roboto_bold"
+                        android:text="Результаты проверки заданий с развёрнутым ответом"
+                        android:textColor="@color/white"
+                        android:textSize="17sp" />
+
+                    <HorizontalScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginTop="10dp">
+
+                        <LinearLayout
+                            android:id="@+id/res_detailed_tables_layout"
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:orientation="horizontal" />
+
+                    </HorizontalScrollView>
+
+                </LinearLayout>
 
                 <TextView
                     android:layout_width="wrap_content"

@@ -351,7 +351,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:fontFamily="@font/roboto_bold"
-                    android:text="Правильные ответы на задания и баллы"
+                    android:text="Правильные ответы на задания и оценивание"
                     android:textColor="@color/white"
                     android:textSize="18sp" />
 
@@ -370,6 +370,37 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:background="@color/dark_green"
+                            app:columnCount="1" />
+
+                    </LinearLayout>
+
+                </HorizontalScrollView>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="10dp"
+                    android:fontFamily="@font/roboto_bold"
+                    android:text="Задания с развёрнутым ответом"
+                    android:textColor="@color/white"
+                    android:textSize="18sp" />
+
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginTop="10dp">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:orientation="horizontal" >
+
+                        <androidx.gridlayout.widget.GridLayout
+                            android:id="@+id/detailed_etalon_creation_table"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@color/light_green"
                             app:columnCount="1" />
 
                     </LinearLayout>

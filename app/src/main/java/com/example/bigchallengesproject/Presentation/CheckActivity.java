@@ -7,6 +7,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.ContentUris;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -22,7 +23,6 @@ import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.util.Pair;
 import android.view.View;
 import android.view.ViewGroup;
@@ -42,13 +42,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.gridlayout.widget.GridLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.chaquo.python.Python;
-import com.chaquo.python.android.AndroidPlatform;
 import com.example.bigchallengesproject.Common.DatabaseHelper;
 import com.example.bigchallengesproject.Common.SimpleCallback;
 import com.example.bigchallengesproject.Common.AIService;
@@ -71,6 +70,7 @@ import com.github.mikephil.charting.data.PieEntry;
 import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.github.mikephil.charting.utils.ColorTemplate;
 import com.google.android.material.appbar.AppBarLayout;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.checkbox.MaterialCheckBox;
 import com.google.android.material.textfield.TextInputEditText;
 
@@ -104,12 +104,15 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -118,45 +121,57 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class CheckActivity extends AppCompatActivity {
 
-    private static final int PICK_IMAGES_REQUEST = 1;
-    private static final int CAPTURE_IMAGE_REQUEST = 2;
-    private static final int PICK_ETALON_IMAGE_REQUEST = 3;
+    private static final int PICK_WORKS_REQUEST = 1;
+    private static final int CAPTURE_WORK_REQUEST = 2;
+    private static final int PICK_PAGES_REQUEST = 3;
+    private static final int CAPTURE_PAGE_REQUEST = 4;
+    private static final int PICK_ETALON_IMAGE_REQUEST = 5;
+    private static final int PICK_CRITERIA_PAGES_REQUEST = 6;
+    private static final int CAPTURE_CRITERIA_PAGE_REQUEST = 7;
     private static final int CAMERA_PERMISSION_CODE = 100;
     private static final Pattern NUMBER_PATTERN = Pattern.compile("^-?\\d+([.,]\\d+)?$");
     private static final Pattern RU_LETTERS = Pattern.compile("^[а-яА-ЯёЁ]+$");
     private static final Pattern EN_LETTERS = Pattern.compile("^[a-zA-Z]+$");
+    private static final String[] ANSWER_TYPES = new String[]{"Краткий ответ", "Развёрнутый ответ"};
+    private static final String[] CHECK_METHODS = new String[]{"Полное совпадение", "Поэлементное совпадение"};
+    private enum CameraOperationType { WORK, PAGE, CRITERIA}
+    private CameraOperationType pendingCameraOperation;
     int k = 0;
-    String[] checkMethods = new String[]{"Полное совпадение", "Поэлементное совпадение"};
+    int currentWorkPosition = -1;
+    int currentCriteriaTaskNum = -1;
+    boolean cardGone = false;
 
     CardView uploadCard, cameraCard, tablesPageCard, templateSaveCard, etalonSaveCard;
     RecyclerView worksRecyclerView, etalonsRecyclerView;
-    WorksAdapter worksAdapter;
+    WorkAdapter workAdapter;
     EtalonsUseAdapter etalonsUseAdapter;
     ScrollView scrollView;
-    LinearLayout tablesPage, recognizedTextPage, recognizedTextTablesLayout, checkWorksLayout, etalonCreationLayout, templateCreationLayout, etalonsListLayout;
-    androidx.gridlayout.widget.GridLayout answersTable, gradesTable, recTextTable, resultsTable, gradesDistributionTable, tasksCompletingTable, cheatersTable;
+    LinearLayout tablesPage, recognizedTextPage, recognizedTextTablesLayout, checkWorksLayout, resultsDetailedLayout,
+            resultsDetailedTablesLayout, etalonCreationLayout, templateCreationLayout, etalonsListLayout;
+    androidx.gridlayout.widget.GridLayout answersTable, detailedAnswersTable, gradesTable, recTextTable, resultsTable, resultsDetailedTable,
+            gradesDistributionTable, tasksCompletingTable, cheatersTable;
     PieChart gradesDistributionChart;
     LineChart tasksCompletingChart;
     TextInputEditText tasksCountInput, etalonNameInput;
     ImageView etalonIcon;
     AppBarLayout waitAppBarLayout;
-    TextView remainingTime;
+    TextView remainingTime, waitingText;
 
-    List<Uri> workUris;
-    List<Long> workSizes;
+    HashMap<Integer, List<WorkAdapter.PageItem>> detailedTaskPagesMap = new HashMap<>();
+    List<WorkAdapter.WorkItem> works = new ArrayList<>();
     List<Etalon> etalonList;
-    private Uri cameraImageUri;
+    Uri cameraImageUri;
     DatabaseHelper dbHelper;
     SharedPreferences settings;
     Bitmap etalonIconBitmap;
     List<Grade> grades;
-    boolean cardGone = false;
-    HashMap<Integer, Pair<String, Double>> answersPointsMap = new HashMap<>();
+    HashMap<Integer, Pair<String, Double>> answerPointsMap = new HashMap<>();
     CountDownTimer timer;
 
     @Override
@@ -166,6 +181,7 @@ public class CheckActivity extends AppCompatActivity {
         getWindow().setStatusBarColor(ContextCompat.getColor(this, R.color.dark_green));
 
         waitAppBarLayout = findViewById(R.id.wait_app_bar_layout);
+        waitingText = findViewById(R.id.waiting_text);
         remainingTime = findViewById(R.id.remaining_time);
         scrollView = findViewById(R.id.scrollview);
         uploadCard = findViewById(R.id.upload_card);
@@ -177,12 +193,15 @@ public class CheckActivity extends AppCompatActivity {
         tablesPageCard = findViewById(R.id.tables_page_card);
         tablesPage = findViewById(R.id.tables_page);
         answersTable = findViewById(R.id.answers_table);
+        detailedAnswersTable = findViewById(R.id.detailed_answers_table);
         gradesTable = findViewById(R.id.grades_table);
         tasksCountInput = findViewById(R.id.tasks_count_input);
         recognizedTextPage = findViewById(R.id.recognized_text_page);
         recognizedTextTablesLayout = findViewById(R.id.rec_tables_layout);
         checkWorksLayout = findViewById(R.id.check_works_page);
         resultsTable = findViewById(R.id.results_table);
+        resultsDetailedLayout = findViewById(R.id.results_detailed_layout);
+        resultsDetailedTablesLayout = findViewById(R.id.res_detailed_tables_layout);
         gradesDistributionTable = findViewById(R.id.grades_distribution_table);
         gradesDistributionChart = findViewById(R.id.grades_distribution_chart);
         tasksCompletingTable = findViewById(R.id.tasks_completing_table);
@@ -197,22 +216,29 @@ public class CheckActivity extends AppCompatActivity {
         settings = getSharedPreferences("Preferences", MODE_PRIVATE);
 
         dbHelper = new DatabaseHelper(this);
-        workUris = new ArrayList<>();
-        workSizes = new ArrayList<>();
-        worksAdapter = new WorksAdapter(this, workUris, workSizes, new WorksAdapter.OnItemClickListener() {
-            @SuppressLint("NotifyDataSetChanged")
+        workAdapter = new WorkAdapter(works, new WorkAdapter.OnPageAddListener() {
             @Override
-            public void onDeleteClick(int position) {
-                workUris.remove(position);
-                workSizes.remove(position);
-                worksAdapter.notifyDataSetChanged();
+            public void onAddFromGallery(int workPosition) {
+                currentWorkPosition = workPosition;
+                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                intent.setType("image/*");
+                intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+                startActivityForResult(intent, PICK_PAGES_REQUEST);
+            }
+
+            @Override
+            public void onAddFromCamera(int workPosition) {
+                currentWorkPosition = workPosition;
+                openCamera();
             }
         });
         worksRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        worksRecyclerView.setAdapter(worksAdapter);
+        worksRecyclerView.setAdapter(workAdapter);
 
-        ArrayAdapter<String> checkMethodsAdapter = new ArrayAdapter<>(CheckActivity.this, R.layout.spinner_item, checkMethods);
+        ArrayAdapter<String> checkMethodsAdapter = new ArrayAdapter<>(CheckActivity.this, R.layout.spinner_item, CHECK_METHODS);
         checkMethodsAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+        ArrayAdapter<String> answerTypesAdapter = new ArrayAdapter<>(CheckActivity.this, R.layout.spinner_item, ANSWER_TYPES);
+        answerTypesAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
         etalonList = dbHelper.getAllEtalons();
         etalonsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         etalonsUseAdapter = new EtalonsUseAdapter(this, etalonList, new EtalonsUseAdapter.OnEtalonUseListener() {
@@ -228,18 +254,90 @@ public class CheckActivity extends AppCompatActivity {
                 for (int i = 1; i < answersTable.getChildCount(); i++) {
                     View row = answersTable.getChildAt(i);
                     Answer answer = answers.get(i - 1);
-                    String points = answer.getPoints();
-                    ((EditText) row.findViewById(R.id.right_answer_input)).setText(answer.getRightAnswer());
-                    ((EditText) row.findViewById(R.id.points_input)).setText(points);
-                    ((MaterialCheckBox) row.findViewById(R.id.order_matters_checkbox)).setChecked(answer.getOrderMatters() == 1);
+                    Spinner answerTypesDropdown = row.findViewById(R.id.answer_type_dropdown);
+                    LinearLayout shortAnswerColumns = row.findViewById(R.id.short_answer_columns);
+                    TextView detailedAnswerText = row.findViewById(R.id.detailed_answer_text);
                     Spinner checkMethodsDropdown = row.findViewById(R.id.check_method_dropdown);
                     androidx.gridlayout.widget.GridLayout complexGradingTable = row.findViewById(R.id.complex_grading_table);
                     CardView editComplexGradingTableCard = row.findViewById(R.id.edit_complex_grading_table_card);
+                    String answerType = answer.getAnswerType();
+                    answerTypesDropdown.setAdapter(answerTypesAdapter);
+                    int selection = answerType.equals("Краткий ответ") ? 0 : 1;
+                    answerTypesDropdown.setSelection(selection);
+                    List<byte[]> criteria = dbHelper.getCriteriaByAnswerId(answer.getId());
+                    if (answerType.equals("Краткий ответ")) {
+                        ((EditText) row.findViewById(R.id.right_answer_input)).setText(answer.getRightAnswer());
+                        ((EditText) row.findViewById(R.id.points_input)).setText(answer.getPoints());
+                        ((MaterialCheckBox) row.findViewById(R.id.order_matters_checkbox)).setChecked(answer.getOrderMatters() == 1);
 
-                    checkMethodsDropdown.setAdapter(checkMethodsAdapter);
+                        checkMethodsDropdown.setAdapter(checkMethodsAdapter);
 
-                    int selection = answer.getCheckMethod().equals("Полное совпадение") ? 0 : 1;
-                    checkMethodsDropdown.setSelection(selection);
+                        selection = answer.getCheckMethod().equals("Полное совпадение") ? 0 : 1;
+                        checkMethodsDropdown.setSelection(selection);
+                    }
+                    else {
+                        shortAnswerColumns.setVisibility(GONE);
+                        detailedAnswerText.setVisibility(VISIBLE);
+                    }
+
+                    int finalI = i;
+                    answerTypesDropdown.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                        @Override
+                        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                            if (position == 0) {
+                                shortAnswerColumns.setVisibility(VISIBLE);
+                                detailedAnswerText.setVisibility(GONE);
+                                for (int j = 1; j < detailedAnswersTable.getChildCount(); j++) {
+                                    View task = detailedAnswersTable.getChildAt(j);
+                                    if (((TextView) task.findViewById(R.id.detailed_task_num)).getText().toString().equals(finalI + "")) {
+                                        detailedTaskPagesMap.remove(finalI);
+                                        detailedAnswersTable.removeView(task);
+                                    }
+                                }
+                            }
+                            else {
+                                shortAnswerColumns.setVisibility(GONE);
+                                detailedAnswerText.setVisibility(VISIBLE);
+
+                                View detailedTask = getLayoutInflater().inflate(R.layout.table_detailed_answers_row, null);
+                                ((TextView) detailedTask.findViewById(R.id.detailed_task_num)).setText(finalI + "");
+
+                                List<WorkAdapter.PageItem> criteriaPages = convertBytesToPageItems(CheckActivity.this, criteria);
+                                detailedTaskPagesMap.put(finalI, criteriaPages);
+
+                                RecyclerView criteriaPagesRecycler = detailedTask.findViewById(R.id.criteria_pages_recycler);
+                                PageAdapter criteriaPagesAdapter = new PageAdapter(criteriaPages, new PageAdapter.OnPageDeleteListener() {
+                                    @Override
+                                    public void onPageDeleted(int pagePosition, boolean isNowEmpty) {
+                                        detailedTaskPagesMap.put(finalI, criteriaPages);
+                                    }
+                                });
+                                criteriaPagesRecycler.setLayoutManager(new LinearLayoutManager(CheckActivity.this));
+                                criteriaPagesRecycler.setAdapter(criteriaPagesAdapter);
+
+                                MaterialCardView criteriaAddFromGallery = detailedTask.findViewById(R.id.criteria_page_upload_card);
+                                MaterialCardView criteriaAddFromCamera = detailedTask.findViewById(R.id.criteria_page_camera_card);
+
+                                criteriaAddFromGallery.setOnClickListener(v -> {
+                                    currentCriteriaTaskNum = finalI;
+                                    Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                                    intent.setType("image/*");
+                                    intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+                                    startActivityForResult(intent, PICK_CRITERIA_PAGES_REQUEST);
+                                });
+
+                                criteriaAddFromCamera.setOnClickListener(v -> {
+                                    currentCriteriaTaskNum = finalI;
+                                    openCameraForCriteria();
+                                });
+
+                                detailedAnswersTable.addView(detailedTask);
+                            }
+                        }
+
+                        @Override
+                        public void onNothingSelected(AdapterView<?> parent) {}
+                    });
 
                     ((LinearLayout) editComplexGradingTableCard.getChildAt(0)).getChildAt(0).setOnClickListener(new View.OnClickListener() {
                         @Override
@@ -298,41 +396,173 @@ public class CheckActivity extends AppCompatActivity {
                 Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
                 intent.setType("image/*");
                 intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-                startActivityForResult(intent, PICK_IMAGES_REQUEST);
+                startActivityForResult(intent, PICK_WORKS_REQUEST);
             }
         });
 
         cameraCard.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                checkCameraPermission();
+                openCamera();
             }
         });
+    }
+
+    public List<WorkAdapter.PageItem> convertBytesToPageItems(Context context, List<byte[]> byteArrays) {
+        List<WorkAdapter.PageItem> pageItems = new ArrayList<>();
+        File tempDir = new File(context.getCacheDir(), "temp_images");
+        if (!tempDir.exists()) tempDir.mkdirs();
+        for (int i = 0; i < byteArrays.size(); i++) {
+            byte[] imageData = byteArrays.get(i);
+            if (imageData != null && imageData.length > 0) {
+                try {
+                    String fileName = "page_" + i + "_" + System.currentTimeMillis() + ".jpg";
+                    File tempFile = new File(tempDir, fileName);
+                    FileOutputStream fos = new FileOutputStream(tempFile);
+                    fos.write(imageData);
+                    Uri fileUri = FileProvider.getUriForFile(context, context.getApplicationContext().getPackageName() + ".provider", tempFile);
+                    pageItems.add(new WorkAdapter.PageItem(fileUri, tempFile.length()));
+
+                } catch (IOException e) {}
+            }
+        }
+        return pageItems;
+    }
+
+    private void openCameraForOperation(CameraOperationType operationType) {
+        pendingCameraOperation = operationType;
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, CAMERA_PERMISSION_CODE);
+        }
+        else startCameraForOperation(operationType);
+    }
+
+    private void startCameraForOperation(CameraOperationType operationType) {
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.Images.Media.TITLE, "Image for " + operationType.name());
+        values.put(MediaStore.Images.Media.DESCRIPTION, "From Camera");
+        cameraImageUri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, cameraImageUri);
+        int requestCode = CAPTURE_WORK_REQUEST;
+        switch (operationType) {
+            case WORK:
+                requestCode = CAPTURE_WORK_REQUEST;
+                break;
+            case PAGE:
+                requestCode = CAPTURE_PAGE_REQUEST;
+                break;
+            case CRITERIA:
+                requestCode = CAPTURE_CRITERIA_PAGE_REQUEST;
+                break;
+        }
+        startActivityForResult(intent, requestCode);
+    }
+
+    private void openCamera() {
+        CameraOperationType operationType = currentWorkPosition == -1 ? CameraOperationType.WORK : CameraOperationType.PAGE;
+        openCameraForOperation(operationType);
+    }
+
+    private void openCameraForCriteria() {
+        openCameraForOperation(CameraOperationType.CRITERIA);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == CAMERA_PERMISSION_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                startCameraForOperation(pendingCameraOperation);
+            } else {
+                Toast.makeText(this, "Разрешение на использование камеры не предоставлено!", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == RESULT_OK) {
-            if (requestCode == PICK_IMAGES_REQUEST && data != null) {
-                if (data.getClipData() != null) {
-                    int count = data.getClipData().getItemCount();
-                    for (int i = 0; i < count; i++) {
-                        Uri workUri = data.getClipData().getItemAt(i).getUri();
-                        addWorkToList(workUri);
+            switch (requestCode) {
+                case PICK_WORKS_REQUEST:
+                    handleWorksSelection(data);
+                    break;
+
+                case CAPTURE_WORK_REQUEST:
+                    if (cameraImageUri != null) addWorkToList(cameraImageUri);
+                    break;
+
+                case PICK_PAGES_REQUEST:
+                    handlePagesSelection(data);
+                    break;
+
+                case CAPTURE_PAGE_REQUEST:
+                    if (cameraImageUri != null && currentWorkPosition != -1) {
+                        addPageToWork(currentWorkPosition, cameraImageUri);
+                        currentWorkPosition = -1;
                     }
-                } else if (data.getData() != null) addWorkToList(data.getData());
+                    break;
+
+                case PICK_CRITERIA_PAGES_REQUEST:
+                    handleCriteriaImageSelection(data);
+                    break;
+
+                case CAPTURE_CRITERIA_PAGE_REQUEST:
+                    if (cameraImageUri != null) addPageToCriteria(cameraImageUri);
+                    break;
+
+                case PICK_ETALON_IMAGE_REQUEST:
+                    handleEtalonImageSelection(data);
+                    break;
             }
-            else if (requestCode == CAPTURE_IMAGE_REQUEST && cameraImageUri != null) addWorkToList(cameraImageUri);
-            else if (requestCode == PICK_ETALON_IMAGE_REQUEST && data != null && data.getData() != null) {
-                Uri imageUri = data.getData();
-                try {
-                    etalonIconBitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
-                    etalonIcon.setImageBitmap(etalonIconBitmap);
-                } catch (IOException e) {
-                    Toast.makeText(this, "Ошибка загрузки изображения", Toast.LENGTH_SHORT).show();
-                }
+        }
+    }
+
+    private void handleWorksSelection(@Nullable Intent data) {
+        if (data == null) return;
+        if (data.getClipData() != null) {
+            int count = data.getClipData().getItemCount();
+            for (int i = 0; i < count; i++) {
+                Uri workUri = data.getClipData().getItemAt(i).getUri();
+                addWorkToList(workUri);
             }
+        }
+        else if (data.getData() != null) addWorkToList(data.getData());
+    }
+
+    private void handlePagesSelection(@Nullable Intent data) {
+        if (data == null || currentWorkPosition == -1) return;
+        if (data.getClipData() != null) {
+            int count = data.getClipData().getItemCount();
+            for (int i = 0; i < count; i++) {
+                Uri pageUri = data.getClipData().getItemAt(i).getUri();
+                addPageToWork(currentWorkPosition, pageUri);
+            }
+        }
+        else if (data.getData() != null) addPageToWork(currentWorkPosition, data.getData());
+        currentWorkPosition = -1;
+    }
+
+    private void handleCriteriaImageSelection(@Nullable Intent data) {
+        if (data == null) return;
+        if (data.getClipData() != null) {
+            int count = data.getClipData().getItemCount();
+            for (int i = 0; i < count; i++) {
+                Uri imageUri = data.getClipData().getItemAt(i).getUri();
+                addPageToCriteria(imageUri);
+            }
+        } else if (data.getData() != null) addPageToCriteria(data.getData());
+    }
+
+    private void handleEtalonImageSelection(@Nullable Intent data) {
+        if (data == null || data.getData() == null) return;
+        Uri imageUri = data.getData();
+        try {
+            etalonIconBitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
+            etalonIcon.setImageBitmap(etalonIconBitmap);
+        } catch (IOException e) {
+            Toast.makeText(this, "Ошибка загрузки изображения", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -348,39 +578,42 @@ public class CheckActivity extends AppCompatActivity {
         return size;
     }
 
-    @SuppressLint("NotifyDataSetChanged")
+    private void addPageToWork(int workPosition, Uri pageUri) {
+        long fileSize = getFileSize(pageUri);
+        WorkAdapter.WorkItem workItem = works.get(workPosition);
+        workItem.addPage(pageUri, fileSize);
+        workAdapter.notifyItemChanged(workPosition);
+    }
+
     private void addWorkToList(Uri workUri) {
         long fileSize = getFileSize(workUri);
-        workUris.add(workUri);
-        workSizes.add(fileSize);
-        worksAdapter.notifyDataSetChanged();
+        WorkAdapter.WorkItem newWork = new WorkAdapter.WorkItem();
+        newWork.addPage(workUri, fileSize);
+        works.add(newWork);
+        workAdapter.notifyItemInserted(works.size() - 1);
     }
 
-    private void checkCameraPermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.CAMERA}, CAMERA_PERMISSION_CODE);
+    private void addPageToCriteria(Uri imageUri) {
+        if (currentCriteriaTaskNum == -1) return;
+        long fileSize = getFileSize(imageUri);
+        List<WorkAdapter.PageItem> pages = detailedTaskPagesMap.get(currentCriteriaTaskNum);
+        if (pages != null) {
+            pages.add(new WorkAdapter.PageItem(imageUri, fileSize));
+            updateCriteriaAdapter(currentCriteriaTaskNum);
         }
-        else openCamera();
+        currentCriteriaTaskNum = -1;
     }
 
-    private void openCamera() {
-        ContentValues values = new ContentValues();
-        values.put(MediaStore.Images.Media.TITLE, "New Image");
-        values.put(MediaStore.Images.Media.DESCRIPTION, "From Camera");
-        cameraImageUri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        intent.putExtra(MediaStore.EXTRA_OUTPUT, cameraImageUri);
-        startActivityForResult(intent, CAPTURE_IMAGE_REQUEST);
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == CAMERA_PERMISSION_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) openCamera();
-            else Toast.makeText(this, "Разрешение на использование камеры не предоставлено!", Toast.LENGTH_SHORT).show();
+    @SuppressLint("NotifyDataSetChanged")
+    private void updateCriteriaAdapter(int taskNum) {
+        for (int i = 0; i < detailedAnswersTable.getChildCount(); i++) {
+            View child = detailedAnswersTable.getChildAt(i);
+            TextView taskNumView = child.findViewById(R.id.detailed_task_num);
+            if (taskNumView != null && taskNumView.getText().toString().equals(String.valueOf(taskNum))) {
+                RecyclerView criteriaRecycler = child.findViewById(R.id.criteria_pages_recycler);
+                if (criteriaRecycler != null && criteriaRecycler.getAdapter() != null) criteriaRecycler.getAdapter().notifyDataSetChanged();
+                break;
+            }
         }
     }
 
@@ -394,18 +627,83 @@ public class CheckActivity extends AppCompatActivity {
             return;
         }
         tablesPage.setVisibility(VISIBLE);
-        ArrayAdapter<String> checkMethodsAdapter = new ArrayAdapter<>(CheckActivity.this, R.layout.spinner_item, checkMethods);
+        ArrayAdapter<String> checkMethodsAdapter = new ArrayAdapter<>(CheckActivity.this, R.layout.spinner_item, CHECK_METHODS);
         checkMethodsAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+        ArrayAdapter<String> answerTypesAdapter = new ArrayAdapter<>(CheckActivity.this, R.layout.spinner_item, ANSWER_TYPES);
+        answerTypesAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
         answersTable.removeAllViews();
         answersTable.addView(getLayoutInflater().inflate(R.layout.table_answers_header, null));
         for (int i = 1; i <= tasksCount; i++) {
             androidx.gridlayout.widget.GridLayout row = (androidx.gridlayout.widget.GridLayout) getLayoutInflater().inflate(R.layout.table_answers_row, null);
             ((TextView) row.findViewById(R.id.task_num)).setText(i + "");
             Spinner checkMethodsDropdown = row.findViewById(R.id.check_method_dropdown);
+            Spinner answerTypesDropdown = row.findViewById(R.id.answer_type_dropdown);
+            LinearLayout shortAnswerColumns = row.findViewById(R.id.short_answer_columns);
+            TextView detailedAnswerText = row.findViewById(R.id.detailed_answer_text);
             androidx.gridlayout.widget.GridLayout complexGradingTable = row.findViewById(R.id.complex_grading_table);
             CardView editComplexGradingTableCard = row.findViewById(R.id.edit_complex_grading_table_card);
 
+            answerTypesDropdown.setAdapter(answerTypesAdapter);
             checkMethodsDropdown.setAdapter(checkMethodsAdapter);
+
+            int finalI = i;
+            answerTypesDropdown.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                    if (position == 0) {
+                        shortAnswerColumns.setVisibility(VISIBLE);
+                        detailedAnswerText.setVisibility(GONE);
+                        for (int j = 1; j < detailedAnswersTable.getChildCount(); j++) {
+                            View task = detailedAnswersTable.getChildAt(j);
+                            if (((TextView) task.findViewById(R.id.detailed_task_num)).getText().toString().equals(finalI + "")) {
+                                detailedTaskPagesMap.remove(finalI);
+                                detailedAnswersTable.removeView(task);
+                            }
+                        }
+                    }
+                    else {
+                        shortAnswerColumns.setVisibility(GONE);
+                        detailedAnswerText.setVisibility(VISIBLE);
+
+                        View detailedTask = getLayoutInflater().inflate(R.layout.table_detailed_answers_row, null);
+                        ((TextView) detailedTask.findViewById(R.id.detailed_task_num)).setText(finalI + "");
+
+                        List<WorkAdapter.PageItem> criteriaPages = new ArrayList<>();
+                        detailedTaskPagesMap.put(finalI, criteriaPages);
+
+                        RecyclerView criteriaPagesRecycler = detailedTask.findViewById(R.id.criteria_pages_recycler);
+                        PageAdapter criteriaPagesAdapter = new PageAdapter(criteriaPages, new PageAdapter.OnPageDeleteListener() {
+                            @Override
+                            public void onPageDeleted(int pagePosition, boolean isNowEmpty) {
+                                detailedTaskPagesMap.put(finalI, criteriaPages);
+                            }
+                        });
+                        criteriaPagesRecycler.setLayoutManager(new LinearLayoutManager(CheckActivity.this));
+                        criteriaPagesRecycler.setAdapter(criteriaPagesAdapter);
+
+                        MaterialCardView criteriaAddFromGallery = detailedTask.findViewById(R.id.criteria_page_upload_card);
+                        MaterialCardView criteriaAddFromCamera = detailedTask.findViewById(R.id.criteria_page_camera_card);
+
+                        criteriaAddFromGallery.setOnClickListener(v -> {
+                            currentCriteriaTaskNum = finalI;
+                            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                            intent.setType("image/*");
+                            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+                            startActivityForResult(intent, PICK_CRITERIA_PAGES_REQUEST);
+                        });
+
+                        criteriaAddFromCamera.setOnClickListener(v -> {
+                            currentCriteriaTaskNum = finalI;
+                            openCameraForCriteria();
+                        });
+
+                        detailedAnswersTable.addView(detailedTask);
+                    }
+                }
+
+                @Override
+                public void onNothingSelected(AdapterView<?> parent) {}
+            });
 
             ((LinearLayout) editComplexGradingTableCard.getChildAt(0)).getChildAt(0).setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -416,8 +714,7 @@ public class CheckActivity extends AppCompatActivity {
             ((LinearLayout) editComplexGradingTableCard.getChildAt(0)).getChildAt(1).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if (complexGradingTable.getChildCount() > 4)
-                        complexGradingTable.removeViewAt(complexGradingTable.getChildCount() - 2);
+                    if (complexGradingTable.getChildCount() > 4) complexGradingTable.removeViewAt(complexGradingTable.getChildCount() - 2);
                 }
             });
 
@@ -467,12 +764,75 @@ public class CheckActivity extends AppCompatActivity {
                     int d = newTasksCount - oldTasksCount;
                     if (d > 0) {
                         while (d != 0) {
+                            final int taskNum = answersTable.getChildCount();
                             View row = getLayoutInflater().inflate(R.layout.table_answers_row, null);
-                            ((TextView) row.findViewById(R.id.task_num)).setText(answersTable.getChildCount() + "");
+                            ((TextView) row.findViewById(R.id.task_num)).setText(taskNum + "");
+                            Spinner answerTypesDropdown = row.findViewById(R.id.answer_type_dropdown);
+                            LinearLayout shortAnswerColumns = row.findViewById(R.id.short_answer_columns);
+                            TextView detailedAnswerText = row.findViewById(R.id.detailed_answer_text);
                             Spinner checkMethodsDropdown = row.findViewById(R.id.check_method_dropdown);
                             androidx.gridlayout.widget.GridLayout complexGradingTable = row.findViewById(R.id.complex_grading_table);
                             CardView editComplexGradingTableCard = row.findViewById(R.id.edit_complex_grading_table_card);
+                            answerTypesDropdown.setAdapter(answerTypesAdapter);
                             checkMethodsDropdown.setAdapter(checkMethodsAdapter);
+
+                            answerTypesDropdown.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                                @Override
+                                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                                    if (position == 0) {
+                                        shortAnswerColumns.setVisibility(VISIBLE);
+                                        detailedAnswerText.setVisibility(GONE);
+                                        for (int j = 1; j < detailedAnswersTable.getChildCount(); j++) {
+                                            View task = detailedAnswersTable.getChildAt(j);
+                                            if (((TextView) task.findViewById(R.id.detailed_task_num)).getText().toString().equals(taskNum + "")) {
+                                                detailedTaskPagesMap.remove(taskNum);
+                                                detailedAnswersTable.removeView(task);
+                                            }
+                                        }
+                                    }
+                                    else {
+                                        shortAnswerColumns.setVisibility(GONE);
+                                        detailedAnswerText.setVisibility(VISIBLE);
+
+                                        View detailedTask = getLayoutInflater().inflate(R.layout.table_detailed_answers_row, null);
+                                        ((TextView) detailedTask.findViewById(R.id.detailed_task_num)).setText(taskNum + "");
+
+                                        List<WorkAdapter.PageItem> criteriaPages = new ArrayList<>();
+                                        detailedTaskPagesMap.put(taskNum, criteriaPages);
+
+                                        RecyclerView criteriaPagesRecycler = detailedTask.findViewById(R.id.criteria_pages_recycler);
+                                        PageAdapter criteriaPagesAdapter = new PageAdapter(criteriaPages, new PageAdapter.OnPageDeleteListener() {
+                                            @Override
+                                            public void onPageDeleted(int pagePosition, boolean isNowEmpty) {
+                                                detailedTaskPagesMap.put(taskNum, criteriaPages);
+                                            }
+                                        });
+                                        criteriaPagesRecycler.setLayoutManager(new LinearLayoutManager(CheckActivity.this));
+                                        criteriaPagesRecycler.setAdapter(criteriaPagesAdapter);
+
+                                        MaterialCardView criteriaAddFromGallery = detailedTask.findViewById(R.id.criteria_page_upload_card);
+                                        MaterialCardView criteriaAddFromCamera = detailedTask.findViewById(R.id.criteria_page_camera_card);
+
+                                        criteriaAddFromGallery.setOnClickListener(v -> {
+                                            currentCriteriaTaskNum = taskNum;
+                                            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                                            intent.setType("image/*");
+                                            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+                                            startActivityForResult(intent, PICK_CRITERIA_PAGES_REQUEST);
+                                        });
+
+                                        criteriaAddFromCamera.setOnClickListener(v -> {
+                                            currentCriteriaTaskNum = taskNum;
+                                            openCameraForCriteria();
+                                        });
+
+                                        detailedAnswersTable.addView(detailedTask);
+                                    }
+                                }
+
+                                @Override
+                                public void onNothingSelected(AdapterView<?> parent) {}
+                            });
 
                             ((LinearLayout) editComplexGradingTableCard.getChildAt(0)).getChildAt(0).setOnClickListener(new View.OnClickListener() {
                                 @Override
@@ -483,8 +843,7 @@ public class CheckActivity extends AppCompatActivity {
                             ((LinearLayout) editComplexGradingTableCard.getChildAt(0)).getChildAt(1).setOnClickListener(new View.OnClickListener() {
                                 @Override
                                 public void onClick(View v) {
-                                    if (complexGradingTable.getChildCount() > 4)
-                                        complexGradingTable.removeViewAt(complexGradingTable.getChildCount() - 2);
+                                    if (complexGradingTable.getChildCount() > 4) complexGradingTable.removeViewAt(complexGradingTable.getChildCount() - 2);
                                 }
                             });
 
@@ -511,8 +870,7 @@ public class CheckActivity extends AppCompatActivity {
                                 }
 
                                 @Override
-                                public void onNothingSelected(AdapterView<?> parent) {
-                                }
+                                public void onNothingSelected(AdapterView<?> parent) {}
                             });
 
                             answersTable.addView(row);
@@ -520,6 +878,14 @@ public class CheckActivity extends AppCompatActivity {
                         }
                     } else {
                         while (d != 0 && answersTable.getChildCount() > 2) {
+                            int taskNum = answersTable.getChildCount() - 1;
+                            for (int j = 1; j < detailedAnswersTable.getChildCount(); j++) {
+                                View task = detailedAnswersTable.getChildAt(j);
+                                if (((TextView) task.findViewById(R.id.detailed_task_num)).getText().toString().equals(taskNum + "")) {
+                                    detailedTaskPagesMap.remove(taskNum);
+                                    detailedAnswersTable.removeView(task);
+                                }
+                            }
                             answersTable.removeViewAt(answersTable.getChildCount() - 1);
                             d++;
                         }
@@ -528,6 +894,8 @@ public class CheckActivity extends AppCompatActivity {
                 }
             }
         });
+        detailedAnswersTable.removeAllViews();
+        detailedAnswersTable.addView(getLayoutInflater().inflate(R.layout.table_detailed_answers_header, null));
         gradesTable.removeAllViews();
         gradesTable.addView(getLayoutInflater().inflate(R.layout.table_grades_header, null));
         if (grades != null) {
@@ -556,7 +924,7 @@ public class CheckActivity extends AppCompatActivity {
 
     @SuppressLint("SetTextI18n")
     public void onRecognizedTextPageClick(View view) throws Exception {
-        if (workUris.isEmpty()) {
+        if (works.isEmpty()) {
             Toast.makeText(this, "Загрузите работы для проверки!", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -574,45 +942,50 @@ public class CheckActivity extends AppCompatActivity {
         boolean isAIEnabled = settings.getBoolean("isAIEnabled", true);
         String taskTypes = getTaskTypes();
         k = 0;
+        waitingText.setText("Пожалуйста, подождите, пока текст работ не будет распознан");
         waitAppBarLayout.setVisibility(View.VISIBLE);
         waitAppBarLayout.animate()
                 .translationY(0)
                 .setDuration(300)
                 .start();
-        int waitTime = 2 * tasksCount * workUris.size();
+        int waitTime = 2 * tasksCount * works.size();
         AIService aiService = new AIService(this);
         initTimer(waitTime * 1000L);
-        for (int i = 0; i < workUris.size(); i++) {
+        for (int i = 0; i < works.size(); i++) {
             int finalI = i;
             if (!isAIEnabled) {
                 createRecTable(tasksCount, finalI, null);
                 continue;
             }
-            Uri imageUri = workUris.get(i);
-            try {
-                Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
-                aiService.recognizeTextBlocks(bitmap, new SimpleCallback<HashMap<Integer, String>>() {
-                    @Override
-                    public void onLoad(HashMap<Integer, String> answersMap) {
-                        if (finalI == workUris.size() - 1) {
-                            timer.cancel();
-                            waitAppBarLayout.animate()
-                                    .translationY(-waitAppBarLayout.getHeight())
-                                    .setDuration(300)
-                                    .withEndAction(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            waitAppBarLayout.setVisibility(View.GONE);
-                                        }
-                                    })
-                                    .start();
-                        }
-                        createRecTable(tasksCount, finalI, answersMap);
-                    }
-                }, taskTypes, settings.getString("symbolsToIgnore", "()[].=;"));
-            } catch (Exception e) {
-                throw new Exception(e);
+            List<Bitmap> pages = new ArrayList<>();
+            for (WorkAdapter.PageItem pageItem : works.get(i).getPages()) {
+                Uri imageUri = pageItem.getUri();
+                try {
+                    Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
+                    pages.add(bitmap);
+                } catch (IOException e) {
+                    pages.add(null);
+                }
             }
+            aiService.recognizeTestAnswers(pages, new SimpleCallback<HashMap<Integer, String>>() {
+                @Override
+                public void onLoad(HashMap<Integer, String> answersMap) {
+                    if (finalI == works.size() - 1) {
+                        timer.cancel();
+                        waitAppBarLayout.animate()
+                                .translationY(-waitAppBarLayout.getHeight())
+                                .setDuration(300)
+                                .withEndAction(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        waitAppBarLayout.setVisibility(View.GONE);
+                                    }
+                                })
+                                .start();
+                    }
+                    createRecTable(tasksCount, finalI, answersMap);
+                }
+            }, taskTypes, settings.getString("symbolsToIgnore", "()[].=;"));
         }
         scrollView.post(new Runnable() {
             @Override
@@ -624,7 +997,9 @@ public class CheckActivity extends AppCompatActivity {
 
     public String getTaskTypes() {
         StringBuilder res = new StringBuilder();
+        Set<Integer> detailedTasks = detailedTaskPagesMap.keySet();
         for (int i = 1; i < answersTable.getChildCount(); i++) {
+            if (detailedTasks.contains(i)) continue;
             View row = answersTable.getChildAt(i);
             String rightAnswer = ((EditText) row.findViewById(R.id.right_answer_input)).getText().toString();
             res.append(i).append(" ");
@@ -670,11 +1045,13 @@ public class CheckActivity extends AppCompatActivity {
             recognizedTextTablesLayout.addView(recTextTable);
             k = 0;
         }
-        GridLayout mergedRow = (GridLayout) getLayoutInflater().inflate(R.layout.table_recognized_text_merged_row, null);
+        View mergedRow = getLayoutInflater().inflate(R.layout.table_recognized_text_merged_row, null);
         ((EditText) mergedRow.findViewById(R.id.work_name_input)).setText("Работа №" + (i + 1));
         recTextTable.addView(mergedRow);
+        Set<Integer> detailedTasks = detailedTaskPagesMap.keySet();
         for (int j = 1; j <= tasksCount; j++) {
-            GridLayout row = (GridLayout) getLayoutInflater().inflate(R.layout.table_recognized_text_row, null);
+            if (detailedTasks.contains(j)) continue;
+            View row = getLayoutInflater().inflate(R.layout.table_recognized_text_row, null);
             ((TextView) row.findViewById(R.id.rec_task_num)).setText(j + "");
             String answer = (answersMap != null && answersMap.get(j) != null) ? answersMap.get(j).replace("null", "") : "";
             ((EditText) row.findViewById(R.id.rec_answer_input)).setText(answer);
@@ -807,7 +1184,21 @@ public class CheckActivity extends AppCompatActivity {
     }
 
     public int getProbability(int groupSize, double totalWeight, double maxTotalWeight) {
-        return (int) Math.min(Math.round((totalWeight / maxTotalWeight + 0.1 * (groupSize - 2)) * 100), 100);
+        return (int) Math.min(Math.round((totalWeight / maxTotalWeight + 0.07 * (groupSize - 2)) * 100), 100);
+    }
+
+    public List<Bitmap> getBitmapsFromPages(Context context, List<WorkAdapter.PageItem> pages) {
+        List<Bitmap> bitmaps = new ArrayList<>();
+        for (WorkAdapter.PageItem pageItem : pages) {
+            Uri imageUri = pageItem.getUri();
+            try {
+                Bitmap bitmap = MediaStore.Images.Media.getBitmap(context.getContentResolver(), imageUri);
+                bitmaps.add(bitmap);
+            } catch (IOException e) {
+                bitmaps.add(null);
+            }
+        }
+        return bitmaps;
     }
 
     @SuppressLint("SetTextI18n")
@@ -816,6 +1207,55 @@ public class CheckActivity extends AppCompatActivity {
             Toast.makeText(this, "Проверьте корректность заполнения таблиц!", Toast.LENGTH_SHORT).show();
             return;
         }
+        Set<Integer> detailedTasks = detailedTaskPagesMap.keySet();
+        if (detailedTasks.isEmpty()) {
+            dropCheckResults(null);
+            return;
+        }
+        waitingText.setText("Пожалуйста, подождите, пока работы не будут проверены");
+        waitAppBarLayout.setVisibility(View.VISIBLE);
+        waitAppBarLayout.animate()
+                .translationY(0)
+                .setDuration(300)
+                .start();
+        initTimer(20000L * detailedTasks.size() * works.size());
+
+        List<Pair<Integer, HashMap<Integer, HashMap<String, Pair<Integer, String>>>>> allResults = new ArrayList<>();
+        AtomicInteger completedRequests = new AtomicInteger(0);
+        int totalDetailedTasks = works.size() * detailedTasks.size();
+        AIService aiService = new AIService(this);
+        for (int i = 1; i <= works.size(); i++) {
+            HashMap<Integer, HashMap<String, Pair<Integer, String>>> workResults = new HashMap<>();
+            allResults.add(new Pair<>(i, workResults));
+            final int workIndex = i;
+            for (int t : detailedTasks) {
+                List<Bitmap> workPages = getBitmapsFromPages(this, works.get(i - 1).getPages());
+                List<Bitmap> criteria = getBitmapsFromPages(this, detailedTaskPagesMap.get(t));
+                aiService.evaluateDetailedTask(workPages, t, criteria, new SimpleCallback<HashMap<String, Pair<Integer, String>>>() {
+                    @Override
+                    public void onLoad(HashMap<String, Pair<Integer, String>> data) {
+                        synchronized (allResults) {
+                            for (Pair<Integer, HashMap<Integer, HashMap<String, Pair<Integer, String>>>> result : allResults) {
+                                if (result.first == workIndex) {
+                                    result.second.put(t, data);
+                                    break;
+                                }
+                            }
+                            if (completedRequests.incrementAndGet() == totalDetailedTasks) {
+                                runOnUiThread(() -> {
+                                    Collections.sort(allResults, (o1, o2) -> o1.first.compareTo(o2.first));
+                                    dropCheckResults(allResults);
+                                });
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    @SuppressLint("SetTextI18n")
+    public void dropCheckResults(List<Pair<Integer, HashMap<Integer, HashMap<String, Pair<Integer, String>>>>> allResults) {
         checkWorksLayout.setVisibility(VISIBLE);
         resultsTable.removeAllViews();
         gradesDistributionTable.removeAllViews();
@@ -823,8 +1263,10 @@ public class CheckActivity extends AppCompatActivity {
         cheatersTable.removeAllViews();
         if (cardGone) templateSaveCard.setVisibility(GONE);
 
+        Set<Integer> detailedTasks = detailedTaskPagesMap.keySet();
         HashMap<Integer, List<Object>> answersMapForCheck = new HashMap<>();
         for (int i = 1; i < answersTable.getChildCount(); i++) {
+            if (detailedTasks.contains(i)) continue;
             View row = answersTable.getChildAt(i);
             EditText answerInput = row.findViewById(R.id.right_answer_input);
             EditText pointsInput = row.findViewById(R.id.points_input);
@@ -848,77 +1290,100 @@ public class CheckActivity extends AppCompatActivity {
                     gradingList.add(new ComplexCriteria(0, 0, minMistakes, maxMistakes, complexPoints));
                 }
             }
-
-            answersMapForCheck.put(i, List.of(new Answer(0, 0, 0, answer, points, orderMatters, checkMethod), gradingList));
-            answersPointsMap.put(i, new Pair<>(answer, Double.parseDouble(points)));
+            answersMapForCheck.put(i, List.of(new Answer(0, 0, 0, "Краткий ответ", answer, points, orderMatters, checkMethod), gradingList));
+            answerPointsMap.put(i, new Pair<>(answer, Double.parseDouble(points)));
         }
-
         resultsTable.addView(getLayoutInflater().inflate(R.layout.table_results_header_main, null));
         androidx.gridlayout.widget.GridLayout header = resultsTable.findViewById(R.id.table_results_title_main);
         int tasksCount = Integer.parseInt(tasksCountInput.getText().toString());
         header.setColumnCount(tasksCount + 2);
         for (int i = 1; i <= tasksCount; i++) {
-            androidx.gridlayout.widget.GridLayout taskElement = (androidx.gridlayout.widget.GridLayout) getLayoutInflater().inflate(R.layout.table_results_header_task, null);
-            ((TextView) taskElement.findViewById(R.id.res_task_num)).setText("Задание " + i);
+            View taskElement;
+            if (!detailedTasks.contains(i)) {
+                taskElement = getLayoutInflater().inflate(R.layout.table_results_header_short_task, null);
+                ((TextView) taskElement.findViewById(R.id.res_task_num)).setText("Задание " + i);
+            }
+            else {
+                taskElement = getLayoutInflater().inflate(R.layout.table_results_header_detailed_task, null);
+                ((TextView) taskElement.findViewById(R.id.res_detailed_task_num)).setText("Задание " + i);
+            }
             header.addView(taskElement);
         }
         header.addView(getLayoutInflater().inflate(R.layout.table_results_header_end, null));
         Map<String, Map<Integer, String>> studentAnswers = new HashMap<>();
         HashMap<String, Integer> gradesMap = new HashMap<>();
         HashMap<Pair<Integer, Double>, Integer> tasksMap = new HashMap<>();
-        for (int i = 1; i <= workUris.size(); i++) {
+        for (int i = 1; i <= works.size(); i++) {
             Map<Integer, String> answers = new HashMap<>();
             androidx.gridlayout.widget.GridLayout row = (androidx.gridlayout.widget.GridLayout) getLayoutInflater().inflate(R.layout.table_results_row_main, null);
             row.setColumnCount(tasksCount + 2);
-            double pointsSum = 0.0;
+            final double[] pointsSum = {0.0};
 
             int tableIndex = (i - 1) / 3;
             int workOffset = (i - 1) % 3;
             androidx.gridlayout.widget.GridLayout workTable = (androidx.gridlayout.widget.GridLayout) recognizedTextTablesLayout.getChildAt(tableIndex);
-            int workRowIndex = 1 + workOffset * (tasksCount + 1);
+            int workRowIndex = 1 + workOffset * (tasksCount - detailedTasks.size() + 1);
             String workName = ((EditText) workTable.getChildAt(workRowIndex).findViewById(R.id.work_name_input)).getText().toString();
             ((TextView) row.findViewById(R.id.res_work_name)).setText(workName);
             for (int t = 1; t <= tasksCount; t++) {
-                EditText answerInput = workTable.getChildAt(workRowIndex + t).findViewById(R.id.rec_answer_input);
-                String recognizedAnswer = answerInput.getText().toString().trim();
-                String recAnswerForCheating = answerInput.getText().toString().trim();
-                View taskElement = getLayoutInflater().inflate(R.layout.table_results_row_task, null);
-                Answer answer = (Answer) answersMapForCheck.get(t).get(0);
-                String rightAnswer = answer.getRightAnswer();
-                boolean orderMatters = answer.getOrderMatters() == 1;
-                double points = 0.0;
-                if (answer.getCheckMethod().equals("Полное совпадение")) {
-                    if (!orderMatters) {
-                        recognizedAnswer = sortAnswer(recognizedAnswer);
-                        rightAnswer = sortAnswer(rightAnswer);
+                if (!detailedTasks.contains(t)) {
+                    EditText answerInput = workTable.getChildAt(workRowIndex + t).findViewById(R.id.rec_answer_input);
+                    String recognizedAnswer = answerInput.getText().toString().trim();
+                    String recAnswerForCheating = answerInput.getText().toString().trim();
+                    View taskElement = getLayoutInflater().inflate(R.layout.table_results_row_short_task, null);
+                    Answer answer = (Answer) answersMapForCheck.get(t).get(0);
+                    String rightAnswer = answer.getRightAnswer();
+                    boolean orderMatters = answer.getOrderMatters() == 1;
+                    double points = 0.0;
+                    if (answer.getCheckMethod().equals("Полное совпадение")) {
+                        if (!orderMatters) {
+                            recognizedAnswer = sortAnswer(recognizedAnswer);
+                            rightAnswer = sortAnswer(rightAnswer);
+                        }
+                        if (recognizedAnswer.equals(rightAnswer))
+                            points = Double.parseDouble(answer.getPoints());
+                    } else {
+                        int mistakes = getMistakes(orderMatters, recognizedAnswer, rightAnswer);
+                        List<ComplexCriteria> gradingList = (List<ComplexCriteria>) answersMapForCheck.get(t).get(1);
+                        for (ComplexCriteria complexCriteria : gradingList) {
+                            if (complexCriteria.getMinMistakes() <= mistakes && complexCriteria.getMaxMistakes() >= mistakes)
+                                points = Double.parseDouble(complexCriteria.getPoints());
+                        }
                     }
-                    if (recognizedAnswer.equals(rightAnswer)) points = Double.parseDouble(answer.getPoints());
+                    ((TextView) taskElement.findViewById(R.id.res_answer)).setText(recAnswerForCheating);
+                    ((TextView) taskElement.findViewById(R.id.res_points)).setText(points + "");
+                    pointsSum[0] += points;
+                    row.addView(taskElement);
+                    Pair<Integer, Double> key = new Pair<>(t, points);
+                    if (points != 0) tasksMap.put(key, tasksMap.getOrDefault(key, 0) + 1);
+                    answers.put(t, recAnswerForCheating);
                 }
                 else {
-                    int mistakes = getMistakes(orderMatters, recognizedAnswer, rightAnswer);
-                    List<ComplexCriteria> gradingList = (List<ComplexCriteria>) answersMapForCheck.get(t).get(1);
-                    for (ComplexCriteria complexCriteria : gradingList) {
-                        if (complexCriteria.getMinMistakes() <= mistakes && complexCriteria.getMaxMistakes() >= mistakes)
-                            points = Double.parseDouble(complexCriteria.getPoints());
+                    try {
+                        HashMap<String, Pair<Integer, String>> results = allResults.get(i - 1).second.get(t);
+                        View taskElement = getLayoutInflater().inflate(R.layout.table_results_row_detailed_task, null);
+                        List<String> criteria = results.keySet().stream().collect(Collectors.toList());
+                        int taskPoints = 0;
+                        for (String c : criteria) {
+                            taskPoints += results.get(c).first;
+                        }
+                        ((TextView) taskElement.findViewById(R.id.res_detailed_points_sum)).setText(taskPoints + "");
+                        pointsSum[0] += taskPoints;
+                        row.addView(taskElement);
+                    } catch (Exception ignored) {
+                        Toast.makeText(this, "Произошла ошибка при проверке заданий с развёрнутым ответом. Попробуйте ещё раз!", Toast.LENGTH_SHORT).show();
                     }
                 }
-                ((TextView) taskElement.findViewById(R.id.res_answer)).setText(recAnswerForCheating);
-                ((TextView) taskElement.findViewById(R.id.res_points)).setText(points + "");
-                pointsSum += points;
-                row.addView(taskElement);
-                Pair<Integer, Double> key = new Pair<>(t, points);
-                if (points != 0) tasksMap.put(key, tasksMap.getOrDefault(key, 0) + 1);
-                answers.put(t, recAnswerForCheating);
             }
             studentAnswers.put(workName, answers);
 
             View rowEnd = getLayoutInflater().inflate(R.layout.table_results_row_end, null);
-            ((TextView) rowEnd.findViewById(R.id.points_sum)).setText(pointsSum + "");
+            ((TextView) rowEnd.findViewById(R.id.points_sum)).setText(pointsSum[0] + "");
             for (int j = 1; j < gradesTable.getChildCount(); j++) {
                 View gradeRow = gradesTable.getChildAt(j);
                 double min = Double.parseDouble(((EditText) gradeRow.findViewById(R.id.min_points_input)).getText().toString());
                 double max = Double.parseDouble(((EditText) gradeRow.findViewById(R.id.max_points_input)).getText().toString());
-                if (min <= pointsSum && pointsSum <= max) {
+                if (min <= pointsSum[0] && pointsSum[0] <= max) {
                     String grade = ((TextView) gradeRow.findViewById(R.id.grade_view)).getText().toString();
                     gradesMap.put(grade, gradesMap.getOrDefault(grade, 0) + 1);
                     ((TextView) rowEnd.findViewById(R.id.mark)).setText(grade);
@@ -929,6 +1394,60 @@ public class CheckActivity extends AppCompatActivity {
             row.addView(rowEnd);
             resultsTable.addView(row);
         }
+        if (!detailedTasks.isEmpty()) {
+            resultsDetailedLayout.setVisibility(VISIBLE);
+            resultsDetailedTablesLayout.removeAllViews();
+            resultsDetailedTable = new androidx.gridlayout.widget.GridLayout(this);
+            resultsDetailedTable.setLayoutParams(new ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT));
+            resultsDetailedTable.setColumnCount(1);
+            resultsDetailedTable.setBackgroundColor(getResources().getColor(R.color.dark_green));
+            resultsDetailedTable.addView(getLayoutInflater().inflate(R.layout.table_results_detailed_header, null));
+            resultsDetailedTablesLayout.addView(resultsDetailedTable);
+            k = 0;
+            for (int i = 0; i < works.size(); i++) {
+                if (k == 3) {
+                    resultsDetailedTable = new GridLayout(this);
+                    resultsDetailedTable.setLayoutParams(new ViewGroup.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT));
+                    resultsDetailedTable.setColumnCount(1);
+                    resultsDetailedTable.setBackgroundColor(getResources().getColor(R.color.dark_green));
+                    resultsDetailedTable.addView(getLayoutInflater().inflate(R.layout.table_results_detailed_header, null));
+                    resultsDetailedTablesLayout.addView(resultsDetailedTable);
+                    k = 0;
+                }
+                View mergedRow = getLayoutInflater().inflate(R.layout.table_results_detailed_merged_row, null);
+                int tableIndex = i / 3;
+                int workOffset = i % 3;
+                androidx.gridlayout.widget.GridLayout workTable = (androidx.gridlayout.widget.GridLayout) recognizedTextTablesLayout.getChildAt(tableIndex);
+                int workRowIndex = 1 + workOffset * (tasksCount - detailedTasks.size() + 1);
+                String workName = ((EditText) workTable.getChildAt(workRowIndex).findViewById(R.id.work_name_input)).getText().toString();
+                ((TextView) mergedRow.findViewById(R.id.work_name)).setText(workName);
+                resultsDetailedTable.addView(mergedRow);
+                for (int j = 1; j <= tasksCount; j++) {
+                    if (!detailedTasks.contains(j)) continue;
+                    View rowMain = getLayoutInflater().inflate(R.layout.table_results_detailed_row_main, null);
+                    ((TextView) rowMain.findViewById(R.id.res_det_task_num)).setText(j + "");
+                    try {
+                        androidx.gridlayout.widget.GridLayout criteriaTable = rowMain.findViewById(R.id.criteria_table);
+                        HashMap<String, Pair<Integer, String>> results = allResults.get(i).second.get(j);
+                        List<String> criteria = results.keySet().stream().collect(Collectors.toList());
+                        for (String c : criteria) {
+                            View rowCriteria = getLayoutInflater().inflate(R.layout.table_results_detailed_row_criteria, null);
+                            ((TextView) rowCriteria.findViewById(R.id.res_criteria)).setText(c);
+                            ((TextView) rowCriteria.findViewById(R.id.res_detailed_points)).setText(results.get(c).first + "");
+                            ((TextView) rowCriteria.findViewById(R.id.res_detailed_comment)).setText(results.get(c).second);
+                            criteriaTable.addView(rowCriteria);
+                        }
+                    } catch (Exception ignored) {}
+                    resultsDetailedTable.addView(rowMain);
+                }
+                k++;
+            }
+        }
+        else resultsDetailedLayout.setVisibility(GONE);
         gradesDistributionTable.addView(getLayoutInflater().inflate(R.layout.table_grades_distribution_header, null));
         ArrayList<PieEntry> pieEntries = new ArrayList<>();
         int percentagesSum = 0;
@@ -940,7 +1459,7 @@ public class CheckActivity extends AppCompatActivity {
             pieEntries.add(new PieEntry(pupilsGraded, grade));
             ((TextView) gradeRow.findViewById(R.id.pupils_graded)).setText(pupilsGraded + "");
             if (i != gradesTable.getChildCount() - 1) {
-                int pupilsPercentage = Math.round((float) pupilsGraded / workUris.size() * 100);
+                int pupilsPercentage = Math.round((float) pupilsGraded / works.size() * 100);
                 percentagesSum += pupilsPercentage;
                 ((TextView) gradeRow.findViewById(R.id.pupils_percentage)).setText(pupilsPercentage + "%");
             }
@@ -976,6 +1495,7 @@ public class CheckActivity extends AppCompatActivity {
         List<Pair<Integer, Double>> keys = new ArrayList<>();
         for (int i = 1; i < answersTable.getChildCount(); i++) {
             View row = answersTable.getChildAt(i);
+            if (detailedTasks.contains(i)) continue;
             if (((Spinner) row.findViewById(R.id.check_method_dropdown)).getSelectedItemPosition() == 0) {
                 double points = Double.parseDouble(((EditText) row.findViewById(R.id.points_input)).getText().toString());
                 keys.add(new Pair<>(i, points));
@@ -997,7 +1517,7 @@ public class CheckActivity extends AppCompatActivity {
             ((TextView) taskRow.findViewById(R.id.points)).setText(key.second + "");
             int pupilsCompleted = tasksMap.getOrDefault(key, 0);
             ((TextView) taskRow.findViewById(R.id.pupils_completed)).setText(pupilsCompleted + "");
-            int pupilsPercentage = Math.round((float) pupilsCompleted / workUris.size() * 100);
+            int pupilsPercentage = Math.round((float) pupilsCompleted / works.size() * 100);
             ((TextView) taskRow.findViewById(R.id.pupils_comp_percentage)).setText(pupilsPercentage + "%");
             if (prevTask == 0) ((TextView) taskRow.findViewById(R.id.comp_task_num)).setText(key.first + "");
             else if (key.first != prevTask) {
@@ -1054,7 +1574,7 @@ public class CheckActivity extends AppCompatActivity {
         tasksCompletingChart.invalidate();
 
         cheatersTable.addView(getLayoutInflater().inflate(R.layout.table_cheaters_header, null));
-        HashMap<Integer, Map<String, Object>> cheatersGroups = detectCheaters(studentAnswers, answersPointsMap);
+        HashMap<Integer, Map<String, Object>> cheatersGroups = detectCheaters(studentAnswers, answerPointsMap);
         if (cheatersGroups.isEmpty()) cheatersTable.addView(getLayoutInflater().inflate(R.layout.table_cheaters_merged_row, null));
         else {
             for (int i = 1; i <= cheatersGroups.size(); i++) {
@@ -1072,6 +1592,17 @@ public class CheckActivity extends AppCompatActivity {
                 cheatersTable.addView(row);
             }
         }
+        timer.cancel();
+        waitAppBarLayout.animate()
+                .translationY(-waitAppBarLayout.getHeight())
+                .setDuration(300)
+                .withEndAction(new Runnable() {
+                    @Override
+                    public void run() {
+                        waitAppBarLayout.setVisibility(View.GONE);
+                    }
+                })
+                .start();
         scrollView.post(new Runnable() {
             @Override
             public void run() {
@@ -1112,7 +1643,9 @@ public class CheckActivity extends AppCompatActivity {
     }
 
     public boolean isTablesCorrect() {
+        List<Integer> detailedTasks = new ArrayList<>(detailedTaskPagesMap.keySet());
         for (int i = 1; i < answersTable.getChildCount(); i++) {
+            if (detailedTasks.contains(i)) continue;
             View row = answersTable.getChildAt(i);
             EditText answer = row.findViewById(R.id.right_answer_input);
             EditText points = row.findViewById(R.id.points_input);
@@ -1139,6 +1672,10 @@ public class CheckActivity extends AppCompatActivity {
                     }
                 }
             }
+        }
+        for (int i = 0; i < detailedTasks.size(); i++) {
+            List<WorkAdapter.PageItem> data = detailedTaskPagesMap.get(detailedTasks.get(i));
+            if (data.isEmpty()) return false;
         }
         for (int i = 1; i < gradesTable.getChildCount(); i++) {
             View row = gradesTable.getChildAt(i);
@@ -1303,7 +1840,7 @@ public class CheckActivity extends AppCompatActivity {
         cell.setCellStyle(commonStyle);
         sheet.addMergedRegion(new CellRangeAddress(lastRow - 1, lastRow, tasksCount * 2 + 2, tasksCount * 2 + 2));
 
-        for (int i = 1; i <= workUris.size(); i++) {
+        for (int i = 1; i <= works.size(); i++) {
             k = 0;
             androidx.gridlayout.widget.GridLayout workRow = (androidx.gridlayout.widget.GridLayout) resultsTable.getChildAt(i);
             String name = ((TextView) workRow.findViewById(R.id.res_work_name)).getText().toString();
@@ -1318,7 +1855,7 @@ public class CheckActivity extends AppCompatActivity {
                 cell.setCellStyle(commonStyle);
                 cell = row.createCell(j + 1);
                 double points = Double.parseDouble(((TextView) taskElement.findViewById(R.id.res_points)).getText().toString());
-                double maxPoints = answersPointsMap.get(j - k).second;
+                double maxPoints = answerPointsMap.get(j - k).second;
                 cell.setCellValue(points);
                 if (isColoringEnabled) {
                     if (points == 0) cell.setCellStyle(redBackground);
@@ -1338,7 +1875,7 @@ public class CheckActivity extends AppCompatActivity {
         }
 
         if (isAnalysisEnabled) {
-            lastRow += workUris.size() + 2;
+            lastRow += works.size() + 2;
             int chartStartRow = lastRow;
             Row row = sheet.createRow(lastRow);
             cell = row.createCell(0);
@@ -1520,29 +2057,49 @@ public class CheckActivity extends AppCompatActivity {
                 long etalonId = dbHelper.addEtalon(name, iconBytes, new SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(new Date()), tasksCount);
                 if (etalonId != -1) {
                     for (int i = 1; i < answersTable.getChildCount(); i++) {
-                        androidx.gridlayout.widget.GridLayout row = (androidx.gridlayout.widget.GridLayout) answersTable.getChildAt(i);
+                        View row = answersTable.getChildAt(i);
                         TextView taskNumView = row.findViewById(R.id.task_num);
+                        Spinner answerTypeDropdown = row.findViewById(R.id.answer_type_dropdown);
                         EditText rightAnswerInput = row.findViewById(R.id.right_answer_input);
                         EditText pointsInput = row.findViewById(R.id.points_input);
                         MaterialCheckBox checkBox = row.findViewById(R.id.order_matters_checkbox);
                         Spinner checkMethodDropdown = row.findViewById(R.id.check_method_dropdown);
                         int taskNum = Integer.parseInt(taskNumView.getText().toString().trim());
-                        String rightAnswer = rightAnswerInput.getText().toString().trim();
-                        String points = pointsInput.getText().toString().trim();
-                        int orderMatters = checkBox.isChecked() ? 1 : 0;
-                        String checkMethod = (String) checkMethodDropdown.getSelectedItem();
-                        long answerId = dbHelper.addAnswer((int) etalonId, taskNum, rightAnswer, points, orderMatters, checkMethod);
-                        if (answerId != -1 && checkMethod.equals("Поэлементное совпадение")) {
-                            androidx.gridlayout.widget.GridLayout complexGradingTable = row.findViewById(R.id.complex_grading_table);
-                            for (int j = 1; j < complexGradingTable.getChildCount() - 1; j++) {
-                                View row2 = complexGradingTable.getChildAt(j);
-                                EditText minMistakesInput = row2.findViewById(R.id.min_mistakes_input);
-                                EditText maxMistakesInput = row2.findViewById(R.id.max_mistakes_input);
-                                EditText complexPointsInput = row2.findViewById(R.id.complex_points_input);
-                                int minMistakes = Integer.parseInt(minMistakesInput.getText().toString().trim());
-                                int maxMistakes = Integer.parseInt(maxMistakesInput.getText().toString().trim());
-                                String complexPoints = complexPointsInput.getText().toString().trim();
-                                dbHelper.addComplexCriteria((int) answerId, minMistakes, maxMistakes, complexPoints);
+                        String answerType = (String) answerTypeDropdown.getSelectedItem();
+                        if (answerType.equals("Краткий ответ")) {
+                            String rightAnswer = rightAnswerInput.getText().toString().trim();
+                            String points = pointsInput.getText().toString().trim();
+                            int orderMatters = checkBox.isChecked() ? 1 : 0;
+                            String checkMethod = (String) checkMethodDropdown.getSelectedItem();
+                            long answerId = dbHelper.addAnswer((int) etalonId, taskNum, answerType, rightAnswer, points, orderMatters, checkMethod);
+                            if (answerId != -1 && checkMethod.equals("Поэлементное совпадение")) {
+                                androidx.gridlayout.widget.GridLayout complexGradingTable = row.findViewById(R.id.complex_grading_table);
+                                for (int j = 1; j < complexGradingTable.getChildCount() - 1; j++) {
+                                    View row2 = complexGradingTable.getChildAt(j);
+                                    EditText minMistakesInput = row2.findViewById(R.id.min_mistakes_input);
+                                    EditText maxMistakesInput = row2.findViewById(R.id.max_mistakes_input);
+                                    EditText complexPointsInput = row2.findViewById(R.id.complex_points_input);
+                                    int minMistakes = Integer.parseInt(minMistakesInput.getText().toString().trim());
+                                    int maxMistakes = Integer.parseInt(maxMistakesInput.getText().toString().trim());
+                                    String complexPoints = complexPointsInput.getText().toString().trim();
+                                    dbHelper.addComplexCriteria((int) answerId, minMistakes, maxMistakes, complexPoints);
+                                }
+                            }
+                        }
+                        else {
+                            long answerId = dbHelper.addAnswer((int) etalonId, taskNum, answerType);
+                            if (answerId != -1) {
+                                List<WorkAdapter.PageItem> pages = detailedTaskPagesMap.get(taskNum);
+                                for (WorkAdapter.PageItem page : pages) {
+                                    Uri imageUri = page.getUri();
+                                    try {
+                                        Bitmap bitmap = MediaStore.Images.Media.getBitmap(CheckActivity.this.getContentResolver(), imageUri);
+                                        stream = new ByteArrayOutputStream();
+                                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+                                        byte[] criteria = stream.toByteArray();
+                                        dbHelper.addCriteria((int) answerId, criteria);
+                                    } catch (IOException ignored) {}
+                                }
                             }
                         }
                     }
@@ -1593,5 +2150,19 @@ public class CheckActivity extends AppCompatActivity {
         Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         intent.setType("image/*");
         startActivityForResult(intent, PICK_ETALON_IMAGE_REQUEST);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        File tempDir = new File(this.getCacheDir(), "temp_images");
+        if (tempDir.exists() && tempDir.isDirectory()) {
+            File[] files = tempDir.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    file.delete();
+                }
+            }
+        }
     }
 }

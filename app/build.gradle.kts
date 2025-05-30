@@ -42,7 +42,7 @@ chaquopy {
     defaultConfig {
         version = "3.12"
         pip {
-            install("g4f")
+            install("g4f==0.5.2.9")
         }
     }
 }
