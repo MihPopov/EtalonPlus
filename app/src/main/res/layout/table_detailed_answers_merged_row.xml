@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.gridlayout.widget.GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/table_complex_grading_merged_row"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@color/light_green"
+    app:columnCount="1"
+    app:orientation="vertical">
+
+    <TextView
+        android:layout_width="430dp"
+        android:layout_height="35dp"
+        android:gravity="center"
+        android:background="@color/dark_green"
+        android:layout_marginBottom="1dp"
+        android:fontFamily="@font/roboto_bold"
+        android:textSize="14sp"
+        android:textColor="@color/white"
+        app:layout_row="0"
+        app:layout_column="0"
+        android:text="Задания с развёрнутым ответом отсутствуют!" />
+
+</androidx.gridlayout.widget.GridLayout>

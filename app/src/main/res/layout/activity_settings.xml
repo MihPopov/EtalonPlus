@@ -88,35 +88,6 @@
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="20dp"
-                android:layout_marginEnd="20dp"
-                android:layout_marginTop="15dp"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:fontFamily="@font/roboto_bold"
-                    android:text="Использовать ИИ для\nсчитывания текста"
-                    android:textColor="@color/white"
-                    android:textSize="18sp" />
-
-                <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/ai_switch"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="15dp"
-                    app:trackDecorationTint="@color/white"
-                    app:thumbTint="@color/dark_green"
-                    app:trackTint="@color/light_green" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/symbols_to_ignore_layout"
-                android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_marginStart="20dp"
                 android:layout_marginEnd="20dp"

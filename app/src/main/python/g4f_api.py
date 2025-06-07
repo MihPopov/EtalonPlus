@@ -29,7 +29,7 @@ def get_test_answers(page_bytes, taskTypes):
     ]
 
     try:
-        return chat_completion("".join(prompt), page_bytes)
+        return recognize_test_answers("".join(prompt), page_bytes)
     except Exception as e:
         return f"Ошибка обработки: {str(e)}"
 

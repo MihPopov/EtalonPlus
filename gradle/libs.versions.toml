@@ -1,6 +1,5 @@
 [versions]
 agp = "8.9.0"
-converterGson = "2.11.0"
 gridlayout = "1.0.0"
 coreSplashscreen = "1.0.1"
 junit = "4.13.2"
@@ -12,7 +11,6 @@ activity = "1.9.3"
 constraintlayout = "2.2.0"
 mpandroidchart = "v3.1.0"
 poi = "5.2.3"
-retrofit = "2.11.0"
 
 [libraries]
 core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }
@@ -27,8 +25,6 @@ constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayo
 mpandroidchart = { module = "com.github.PhilJay:MPAndroidChart", version.ref = "mpandroidchart" }
 poi = { module = "org.apache.poi:poi", version.ref = "poi" }
 poi-ooxml = { module = "org.apache.poi:poi-ooxml", version.ref = "poi" }
-retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
-retrofit2-converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

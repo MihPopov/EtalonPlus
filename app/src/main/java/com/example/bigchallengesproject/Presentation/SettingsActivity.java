@@ -30,8 +30,8 @@ public class SettingsActivity extends AppCompatActivity {
 
     androidx.gridlayout.widget.GridLayout gradesSystemTable;
     TextInputEditText tableNameInput, symbolsToIgnoreInput;
-    MaterialSwitch aiSwitch, oneTableSwitch, oneSheetSwitch, coloringSwitch, analysisSwitch;
-    LinearLayout oneSheetLayout, symbolsToIgnoreLayout;
+    MaterialSwitch oneTableSwitch, oneSheetSwitch, coloringSwitch, analysisSwitch;
+    LinearLayout oneSheetLayout;
 
     DatabaseHelper dbHelper;
     SharedPreferences settings;
@@ -45,9 +45,7 @@ public class SettingsActivity extends AppCompatActivity {
 
         gradesSystemTable = findViewById(R.id.grades_system_table);
         tableNameInput = findViewById(R.id.table_name_input);
-        symbolsToIgnoreLayout = findViewById(R.id.symbols_to_ignore_layout);
         symbolsToIgnoreInput = findViewById(R.id.symbols_to_ignore_input);
-        aiSwitch = findViewById(R.id.ai_switch);
         oneTableSwitch = findViewById(R.id.one_table_switch);
         oneSheetLayout = findViewById(R.id.one_sheet_layout);
         oneSheetSwitch = findViewById(R.id.one_sheet_switch);
@@ -57,17 +55,7 @@ public class SettingsActivity extends AppCompatActivity {
         dbHelper = new DatabaseHelper(this);
         settings = getSharedPreferences("Preferences", MODE_PRIVATE);
 
-        boolean isAIEnabled = settings.getBoolean("isAIEnabled", true);
-        aiSwitch.setChecked(isAIEnabled);
-        if (!isAIEnabled) symbolsToIgnoreLayout.setVisibility(GONE);
         symbolsToIgnoreInput.setText(settings.getString("symbolsToIgnore", "()[].=;"));
-        aiSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) symbolsToIgnoreLayout.setVisibility(VISIBLE);
-                else symbolsToIgnoreLayout.setVisibility(GONE);
-            }
-        });
 
         List<String> gradesSystem = dbHelper.getGradesSystem();
         gradesSystemTable.addView(getLayoutInflater().inflate(R.layout.table_grades_system_header, null));
@@ -114,7 +102,6 @@ public class SettingsActivity extends AppCompatActivity {
                     .collect(Collectors.joining());
             boolean isOneTableEnabled = oneTableSwitch.isChecked();
             SharedPreferences.Editor prefEditor = settings.edit();
-            prefEditor.putBoolean("isAIEnabled", aiSwitch.isChecked());
             prefEditor.putString("symbolsToIgnore", symbolsToIgnore);
             prefEditor.putString("tableName", tableName);
             prefEditor.putBoolean("isOneTableEnabled", isOneTableEnabled);

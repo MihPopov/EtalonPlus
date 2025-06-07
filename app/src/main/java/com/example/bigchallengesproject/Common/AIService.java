@@ -14,55 +14,16 @@ import java.io.*;
 import java.util.*;
 
 public class AIService {
-//    private static final String BASE_URL = "https://ml-api.cloudpub.ru/";
-//    Retrofit retrofit;
-//    API api;
+
     Python py;
 
     public AIService(Context context) {
         if (!Python.isStarted()) Python.start(new AndroidPlatform(context));
         py = Python.getInstance();
-//        OkHttpClient okHttpClient = new OkHttpClient.Builder()
-//                .connectTimeout(30, TimeUnit.SECONDS)
-//                .readTimeout(waitTime + 30, TimeUnit.SECONDS)
-//                .writeTimeout(waitTime + 30, TimeUnit.SECONDS)
-//                .build();
-//
-//        retrofit = new Retrofit.Builder()
-//                .baseUrl(BASE_URL)
-//                .client(okHttpClient)
-//                .addConverterFactory(GsonConverterFactory.create())
-//                .build();
-//
-//        api = retrofit.create(API.class);
     }
 
     public void recognizeTestAnswers(List<Bitmap> pages, SimpleCallback<HashMap<Integer, String>> callback, String taskTypes, String symbolsToIgnore) {
         new RecognitionTask(py, callback, taskTypes, symbolsToIgnore).execute(pages.toArray(new Bitmap[0]));
-
-//        RequestBody requestFile = RequestBody.create(MediaType.parse("image/*"), imageBytes);
-//        MultipartBody.Part body = MultipartBody.Part.createFormData("file", "image.jpg", requestFile);
-//
-//        Call<List<String>> call = api.uploadImage(body);
-//        call.enqueue(new Callback<List<String>>() {
-//            @Override
-//            public void onResponse(Call<List<String>> call, Response<List<String>> response) {
-//                if (response.isSuccessful()) {
-//                    results.clear();
-//                    results.addAll(response.body());
-//                    callback.onLoad(results);
-//                }
-//                else {
-//                    callback.onLoad(null);
-//                    Log.e("OCR", "Ошибка: " + response.code());
-//                }
-//            }
-//            @Override
-//            public void onFailure(Call<List<String>> call, Throwable t) {
-//                callback.onLoad(null);
-//                Log.e("OCR", "Сбой соединения: " + t.getMessage());
-//            }
-//        });
     }
 
     public void evaluateDetailedTask(List<Bitmap> workPages, int taskNum, List<Bitmap> criteria, SimpleCallback<HashMap<String, Pair<Integer, String>>> callback) {

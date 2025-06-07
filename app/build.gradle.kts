@@ -56,8 +56,6 @@ dependencies {
     implementation(libs.gridlayout)
     implementation(libs.poi)
     implementation(libs.poi.ooxml)
-    implementation(libs.retrofit)
-    implementation(libs.retrofit2.converter.gson)
     implementation(libs.mpandroidchart)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
