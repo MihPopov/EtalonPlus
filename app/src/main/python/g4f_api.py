@@ -58,14 +58,12 @@ def get_detailed_task(prompt: str, pages_bytes: list, criteria_bytes: list) -> D
         images.append([BytesIO(page), f"work_page_{i}.jpg"])
     for i, page in enumerate(criteria_bytes):
         images.append([BytesIO(page), f"criteria_page_{i}.jpg"])
-    print("!")
     response = client.chat.completions.create(
         messages=[{"content": prompt, "role": "user"}],
         model="",
         temperature=0,
         images=images
     )
-    print(response.choices[0].message.content)
     return parse_response(response.choices[0].message.content)
 
 def parse_response(text: str) -> Dict[str, Tuple[int, str]]:

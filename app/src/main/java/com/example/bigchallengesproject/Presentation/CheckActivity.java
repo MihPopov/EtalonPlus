@@ -1429,7 +1429,7 @@ public class CheckActivity extends BaseActivity {
             if (tasksCompletingTable.getChildCount() > 1) {
                 String percentage = sheet.getRow(lastRow).getCell(3).getStringCellValue();
                 percentages.add(Integer.valueOf(percentage.substring(0, percentage.length() - 1)));
-                for (int i = chartStartRow; i < chartStartRow + tasksCount; i++) {
+                for (int i = chartStartRow; i < chartStartRow + tasksCount - detailedTasks.size(); i++) {
                     row = sheet.getRow(i);
                     cell = row.createCell(5);
                     cell.setCellValue(taskNums.get(i - chartStartRow));
@@ -1438,13 +1438,13 @@ public class CheckActivity extends BaseActivity {
                     cell.setCellValue(percentages.get(i - chartStartRow));
                     cell.setCellStyle(commonStyle);
                 }
-                anchor = drawing.createAnchor(0, 0, 0, 0, 8, chartStartRow, 8 + tasksCount, chartStartRow + 10);
+                anchor = drawing.createAnchor(0, 0, 0, 0, 8, chartStartRow, 8 + tasksCount - detailedTasks.size(), chartStartRow + 10);
                 XSSFChart lineChart = drawing.createChart(anchor);
                 XDDFDataSource<String> xData = XDDFDataSourcesFactory.fromStringCellRange(
-                        (XSSFSheet) sheet, new CellRangeAddress(chartStartRow, chartStartRow + tasksCount, 5, 5)
+                        (XSSFSheet) sheet, new CellRangeAddress(chartStartRow, chartStartRow + tasksCount - detailedTasks.size(), 5, 5)
                 );
                 XDDFNumericalDataSource<Double> yData = XDDFDataSourcesFactory.fromNumericCellRange(
-                        (XSSFSheet) sheet, new CellRangeAddress(chartStartRow , chartStartRow + tasksCount, 6, 6)
+                        (XSSFSheet) sheet, new CellRangeAddress(chartStartRow , chartStartRow + tasksCount - detailedTasks.size(), 6, 6)
                 );
                 XDDFCategoryAxis xAxis = lineChart.createCategoryAxis(AxisPosition.BOTTOM);
                 XDDFValueAxis yAxis = lineChart.createValueAxis(AxisPosition.LEFT);
