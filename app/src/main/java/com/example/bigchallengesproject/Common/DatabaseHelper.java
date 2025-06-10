@@ -20,7 +20,7 @@ import java.util.List;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "etalons_db";
-    private static final int DATABASE_VERSION = 6;
+    private static final int DATABASE_VERSION = 7;
 
     public static final String TABLE_ETALONS = "etalons";
     public static final String COLUMN_ID = "id";
@@ -30,7 +30,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COLUMN_TASKS_COUNT = "tasks_count";
 
     public static final String TABLE_ANSWERS = "answers_table";
-    public static final String COLUMN_ANSWER_ID = "id";
     public static final String COLUMN_ETALON_ID = "etalon_id";
     public static final String COLUMN_TASK_NUM = "task_number";
     public static final String COLUMN_ANSWER_TYPE = "answer_type";
@@ -40,24 +39,19 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COLUMN_CHECK_METHOD = "check_method";
 
     public static final String TABLE_COMPLEX_GRADING = "complex_grading_table";
-    public static final String COLUMN_COMPLEX_GRADING_ID = "id";
-    public static final String COLUMN_COMPLEX_GRADING_ANSWER_ID = "answer_id";
+    public static final String COLUMN_ANSWER_ID = "answer_id";
     public static final String COLUMN_MIN_MISTAKES = "min_mistakes";
     public static final String COLUMN_MAX_MISTAKES = "max_mistakes";
 
     public static final String TABLE_CRITERIA = "criteria_table";
-    public static final String COLUMN_CRITERIA_ID = "id";
-    public static final String COLUMN_CRITERIA_ANSWER_ID = "answer_id";
     public static final String COLUMN_CRITERIA = "criteria";
 
     public static final String TABLE_GRADES = "grades_table";
-    public static final String COLUMN_GRADE_ID = "id";
     public static final String COLUMN_MIN_POINTS = "min_points";
     public static final String COLUMN_MAX_POINTS = "max_points";
     public static final String COLUMN_GRADE = "grade";
 
     public static final String TABLE_GRADES_SYSTEM = "grades_system_table";
-    public static final String COLUMN_GRADE_NAME_ID = "id";
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -73,40 +67,40 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 COLUMN_TASKS_COUNT + " INTEGER)";
 
         String createAnswersTable = "CREATE TABLE " + TABLE_ANSWERS + " (" +
-                COLUMN_ANSWER_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 COLUMN_ETALON_ID + " INTEGER, " +
                 COLUMN_TASK_NUM + " INTEGER, " +
                 COLUMN_ANSWER_TYPE + " TEXT, " +
                 COLUMN_RIGHT_ANSWER + " TEXT, " +
-                COLUMN_POINTS + " TEXT, " +
+                COLUMN_POINTS + " REAL, " +
                 COLUMN_ORDER_MATTERS + " INTEGER, " +
                 COLUMN_CHECK_METHOD + " TEXT, " +
                 "FOREIGN KEY(" + COLUMN_ETALON_ID + ") REFERENCES " + TABLE_ETALONS + "(" + COLUMN_ID + "))";
 
         String createComplexGradingTable = "CREATE TABLE " + TABLE_COMPLEX_GRADING + " (" +
-                COLUMN_COMPLEX_GRADING_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                COLUMN_COMPLEX_GRADING_ANSWER_ID + " INTEGER, " +
+                COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                COLUMN_ANSWER_ID + " INTEGER, " +
                 COLUMN_MIN_MISTAKES + " INTEGER, " +
                 COLUMN_MAX_MISTAKES + " INTEGER, " +
-                COLUMN_POINTS + " TEXT, " +
-                "FOREIGN KEY(" + COLUMN_COMPLEX_GRADING_ANSWER_ID + ") REFERENCES " + TABLE_ANSWERS + "(" + COLUMN_ANSWER_ID + "))";
+                COLUMN_POINTS + " REAL, " +
+                "FOREIGN KEY(" + COLUMN_ANSWER_ID + ") REFERENCES " + TABLE_ANSWERS + "(" + COLUMN_ID + "))";
 
         String createCriteriaTable = "CREATE TABLE " + TABLE_CRITERIA + " (" +
-                COLUMN_CRITERIA_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                COLUMN_CRITERIA_ANSWER_ID + " INTEGER, " +
+                COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                COLUMN_ANSWER_ID + " INTEGER, " +
                 COLUMN_CRITERIA + " BLOB, " +
-                "FOREIGN KEY(" + COLUMN_CRITERIA_ANSWER_ID + ") REFERENCES " + TABLE_ANSWERS + "(" + COLUMN_ANSWER_ID + "))";
+                "FOREIGN KEY(" + COLUMN_ANSWER_ID + ") REFERENCES " + TABLE_ANSWERS + "(" + COLUMN_ID + "))";
 
         String createGradesTable = "CREATE TABLE " + TABLE_GRADES + " (" +
-                COLUMN_GRADE_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 COLUMN_ETALON_ID + " INTEGER, " +
-                COLUMN_MIN_POINTS + " TEXT, " +
-                COLUMN_MAX_POINTS + " TEXT, " +
+                COLUMN_MIN_POINTS + " REAL, " +
+                COLUMN_MAX_POINTS + " REAL, " +
                 COLUMN_GRADE + " TEXT, " +
                 "FOREIGN KEY(" + COLUMN_ETALON_ID + ") REFERENCES " + TABLE_ETALONS + "(" + COLUMN_ID + "))";
 
         String createGradesSystemTable = "CREATE TABLE " + TABLE_GRADES_SYSTEM + " (" +
-                COLUMN_GRADE_NAME_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 COLUMN_GRADE + " TEXT NOT NULL)";
 
         db.execSQL(createEtalonTable);
@@ -145,7 +139,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return db.insert(TABLE_ETALONS, null, values);
     }
 
-    public long addAnswer(int etalonId, int taskNumber, String answerType, String rightAnswer, String points, int orderMatters, String checkMethod) {
+    public long addAnswer(int etalonId, int taskNumber, String answerType, String rightAnswer, double points, int orderMatters, String checkMethod) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(COLUMN_ETALON_ID, etalonId);
@@ -167,32 +161,32 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return db.insert(TABLE_ANSWERS, null, values);
     }
 
-    public long addComplexCriteria(int answerId, int minMistakes, int maxMistakes, String points) {
+    public void addComplexCriteria(int answerId, int minMistakes, int maxMistakes, double points) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put(COLUMN_COMPLEX_GRADING_ANSWER_ID, answerId);
+        values.put(COLUMN_ANSWER_ID, answerId);
         values.put(COLUMN_MIN_MISTAKES, minMistakes);
         values.put(COLUMN_MAX_MISTAKES, maxMistakes);
         values.put(COLUMN_POINTS, points);
-        return db.insert(TABLE_COMPLEX_GRADING, null, values);
+        db.insert(TABLE_COMPLEX_GRADING, null, values);
     }
 
-    public long addCriteria(int answerId, byte[] imageData) {
+    public void addCriteria(int answerId, byte[] imageData) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put(COLUMN_CRITERIA_ANSWER_ID, answerId);
+        values.put(COLUMN_ANSWER_ID, answerId);
         values.put(COLUMN_CRITERIA, imageData);
-        return db.insert(TABLE_CRITERIA, null, values);
+        db.insert(TABLE_CRITERIA, null, values);
     }
 
-    public long addGrade(int etalonId, String minPoints, String maxPoints, String grade) {
+    public void addGrade(int etalonId, double minPoints, double maxPoints, String grade) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(COLUMN_ETALON_ID, etalonId);
         values.put(COLUMN_MIN_POINTS, minPoints);
         values.put(COLUMN_MAX_POINTS, maxPoints);
         values.put(COLUMN_GRADE, grade);
-        return db.insert(TABLE_GRADES, null, values);
+        db.insert(TABLE_GRADES, null, values);
     }
 
     public List<Etalon> getAllEtalons() {
@@ -221,13 +215,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public void deleteEtalon(int etalonId) {
         SQLiteDatabase db = this.getWritableDatabase();
-        Cursor cursor = db.query(TABLE_ANSWERS, new String[]{COLUMN_ANSWER_ID}, COLUMN_ETALON_ID + "=?",
+        Cursor cursor = db.query(TABLE_ANSWERS, new String[]{COLUMN_ID}, COLUMN_ETALON_ID + "=?",
                 new String[]{String.valueOf(etalonId)}, null, null, null);
         if (cursor.moveToFirst()) {
             do {
-                int answerId = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ANSWER_ID));
-                db.delete(TABLE_COMPLEX_GRADING, COLUMN_COMPLEX_GRADING_ANSWER_ID + "=?", new String[]{String.valueOf(answerId)});
-                db.delete(TABLE_CRITERIA, COLUMN_CRITERIA_ANSWER_ID + "=?", new String[]{String.valueOf(answerId)});
+                int answerId = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ID));
+                db.delete(TABLE_COMPLEX_GRADING, COLUMN_ANSWER_ID + "=?", new String[]{String.valueOf(answerId)});
+                db.delete(TABLE_CRITERIA, COLUMN_ANSWER_ID + "=?", new String[]{String.valueOf(answerId)});
             } while (cursor.moveToNext());
         }
         cursor.close();
@@ -260,7 +254,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_ANSWERS + " WHERE " + COLUMN_ETALON_ID + "=?", new String[]{String.valueOf(etalonId)});
         if (cursor.moveToFirst()) {
             do {
-                int id = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ANSWER_ID));
+                int id = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ID));
                 int taskNumber = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_TASK_NUM));
                 String answerType = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ANSWER_TYPE));
                 if (answerType.equals("Развёрнутый ответ")) {
@@ -268,7 +262,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     continue;
                 }
                 String rightAnswer = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_RIGHT_ANSWER));
-                String points = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_POINTS));
+                double points = cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_POINTS));
                 int orderMatters = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ORDER_MATTERS));
                 String checkMethod = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CHECK_METHOD));
                 answers.add(new Answer(id, etalonId, taskNumber, answerType, rightAnswer, points, orderMatters, checkMethod));
@@ -282,14 +276,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public List<ComplexCriteria> getComplexGradingByAnswerId(int answerId) {
         List<ComplexCriteria> gradingList = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_COMPLEX_GRADING + " WHERE " + COLUMN_COMPLEX_GRADING_ANSWER_ID + "=?", new String[]{String.valueOf(answerId)});
+        Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_COMPLEX_GRADING + " WHERE " + COLUMN_ANSWER_ID + "=?", new String[]{String.valueOf(answerId)});
         if (cursor.moveToFirst()) {
             do {
-                int id = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_COMPLEX_GRADING_ID));
+                int id = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ID));
                 int minMistakes = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_MIN_MISTAKES));
                 int maxMistakes = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_MAX_MISTAKES));
-                String score = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_POINTS));
-                gradingList.add(new ComplexCriteria(id, answerId, minMistakes, maxMistakes, score));
+                double points = cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_POINTS));
+                gradingList.add(new ComplexCriteria(id, answerId, minMistakes, maxMistakes, points));
             } while (cursor.moveToNext());
         }
         cursor.close();
@@ -300,7 +294,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public List<byte[]> getCriteriaByAnswerId(int answerId) {
         List<byte[]> criteria = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.query(TABLE_CRITERIA, new String[]{COLUMN_CRITERIA}, COLUMN_CRITERIA_ANSWER_ID + "=?", new String[]{String.valueOf(answerId)},
+        Cursor cursor = db.query(TABLE_CRITERIA, new String[]{COLUMN_CRITERIA}, COLUMN_ANSWER_ID + "=?", new String[]{String.valueOf(answerId)},
                 null, null, null);
         try {
             @SuppressLint("DiscouragedPrivateApi") Field field = CursorWindow.class.getDeclaredField("sCursorWindowSize");
@@ -322,9 +316,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_GRADES + " WHERE " + COLUMN_ETALON_ID + "=?", new String[]{String.valueOf(etalonId)});
         if (cursor.moveToFirst()) {
             do {
-                int id = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_GRADE_ID));
-                String minPoints = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MIN_POINTS));
-                String maxPoints = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MAX_POINTS));
+                int id = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ID));
+                double minPoints = cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_MIN_POINTS));
+                double maxPoints = cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_MAX_POINTS));
                 String grade = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_GRADE));
                 grades.add(new Grade(id, etalonId, minPoints, maxPoints, grade));
             } while (cursor.moveToNext());

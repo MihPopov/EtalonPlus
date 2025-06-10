@@ -695,7 +695,7 @@ public class CheckActivity extends BaseActivity {
             MaterialCheckBox checkBox = row.findViewById(R.id.order_matters_checkbox);
             Spinner checkMethodDropdown = row.findViewById(R.id.check_method_dropdown);
             String answer = answerInput.getText().toString().trim();
-            String points = pointsInput.getText().toString().trim();
+            double points = Double.parseDouble(pointsInput.getText().toString().trim());
             int orderMatters = checkBox.isChecked() ? 1 : 0;
             String checkMethod = (String) checkMethodDropdown.getSelectedItem();
             List<ComplexCriteria> gradingList = new ArrayList<>();
@@ -708,12 +708,12 @@ public class CheckActivity extends BaseActivity {
                     EditText complexPointsInput = row2.findViewById(R.id.complex_points_input);
                     int minMistakes = Integer.parseInt(minMistakesInput.getText().toString().trim());
                     int maxMistakes = Integer.parseInt(maxMistakesInput.getText().toString().trim());
-                    String complexPoints = complexPointsInput.getText().toString().trim();
+                    double complexPoints = Double.parseDouble(complexPointsInput.getText().toString().trim());
                     gradingList.add(new ComplexCriteria(0, 0, minMistakes, maxMistakes, complexPoints));
                 }
             }
             answersMapForCheck.put(i, List.of(new Answer(0, 0, 0, "Краткий ответ", answer, points, orderMatters, checkMethod), gradingList));
-            answerPointsMap.put(i, new Pair<>(answer, Double.parseDouble(points)));
+            answerPointsMap.put(i, new Pair<>(answer, points));
         }
         resultsTable.addView(getLayoutInflater().inflate(R.layout.table_results_header_main, null));
         androidx.gridlayout.widget.GridLayout header = resultsTable.findViewById(R.id.table_results_title_main);
@@ -763,13 +763,13 @@ public class CheckActivity extends BaseActivity {
                             rightAnswer = sortAnswer(rightAnswer);
                         }
                         if (recognizedAnswer.equals(rightAnswer))
-                            points = Double.parseDouble(answer.getPoints());
+                            points = answer.getPoints();
                     } else {
                         int mistakes = getMistakes(orderMatters, recognizedAnswer, rightAnswer);
                         List<ComplexCriteria> gradingList = (List<ComplexCriteria>) answersMapForCheck.get(t).get(1);
                         for (ComplexCriteria complexCriteria : gradingList) {
                             if (complexCriteria.getMinMistakes() <= mistakes && complexCriteria.getMaxMistakes() >= mistakes)
-                                points = Double.parseDouble(complexCriteria.getPoints());
+                                points = complexCriteria.getPoints();
                         }
                     }
                     ((TextView) taskElement.findViewById(R.id.res_answer)).setText(recAnswerForCheating);

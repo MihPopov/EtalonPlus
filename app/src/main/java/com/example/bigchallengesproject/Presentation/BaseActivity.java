@@ -176,6 +176,7 @@ public class BaseActivity extends AppCompatActivity {
         return pageItems;
     }
 
+    @SuppressLint("SetTextI18n")
     protected void setupAnswerTypesDropdown(Spinner answerTypesDropdown, View row, int finalI, Context context,
                                             androidx.gridlayout.widget.GridLayout detailedTable, List<byte[]> criteria, Answer answer) {
         TextView detailedAnswerText = row.findViewById(R.id.detailed_answer_text);
@@ -190,7 +191,7 @@ public class BaseActivity extends AppCompatActivity {
             answerTypesDropdown.setSelection(selection);
             if (answerType.equals("Краткий ответ")) {
                 ((EditText) row.findViewById(R.id.right_answer_input)).setText(answer.getRightAnswer());
-                ((EditText) row.findViewById(R.id.points_input)).setText(answer.getPoints());
+                ((EditText) row.findViewById(R.id.points_input)).setText(answer.getPoints() + "");
                 ((MaterialCheckBox) row.findViewById(R.id.order_matters_checkbox)).setChecked(answer.getOrderMatters() == 1);
 
                 selection = answer.getCheckMethod().equals("Полное совпадение") ? 0 : 1;
@@ -336,7 +337,7 @@ public class BaseActivity extends AppCompatActivity {
                             View row2 = getLayoutInflater().inflate(R.layout.table_complex_grading_row, null);
                             ((EditText) row2.findViewById(R.id.min_mistakes_input)).setText(complexCriteria.getMinMistakes() + "");
                             ((EditText) row2.findViewById(R.id.max_mistakes_input)).setText(complexCriteria.getMaxMistakes() + "");
-                            ((EditText) row2.findViewById(R.id.complex_points_input)).setText(complexCriteria.getPoints());
+                            ((EditText) row2.findViewById(R.id.complex_points_input)).setText(complexCriteria.getPoints() + "");
                             complexGradingTable.addView(row2);
                         }
                         complexGradingTable.addView(getLayoutInflater().inflate(R.layout.table_complex_grading_merged_row, null));
@@ -525,11 +526,12 @@ public class BaseActivity extends AppCompatActivity {
         return true;
     }
 
+    @SuppressLint("SetTextI18n")
     protected void loadGrades(List<Grade> grades, androidx.gridlayout.widget.GridLayout gradesTable) {
         for (Grade grade : grades) {
             View row = getLayoutInflater().inflate(R.layout.table_grades_row, null);
-            ((EditText) row.findViewById(R.id.min_points_input)).setText(grade.getMinPoints());
-            ((EditText) row.findViewById(R.id.max_points_input)).setText(grade.getMaxPoints());
+            ((EditText) row.findViewById(R.id.min_points_input)).setText(grade.getMinPoints() + "");
+            ((EditText) row.findViewById(R.id.max_points_input)).setText(grade.getMaxPoints() + "");
             ((TextView) row.findViewById(R.id.grade_view)).setText(grade.getGrade());
             gradesTable.addView(row);
         }
@@ -558,7 +560,7 @@ public class BaseActivity extends AppCompatActivity {
 
             if (answerType.equals("Краткий ответ")) {
                 String rightAnswer = rightAnswerInput.getText().toString().trim();
-                String points = pointsInput.getText().toString().trim();
+                double points = Double.parseDouble(pointsInput.getText().toString().trim());
                 int orderMatters = checkBox.isChecked() ? 1 : 0;
                 String checkMethod = (String) checkMethodDropdown.getSelectedItem();
                 long answerId = dbHelper.addAnswer((int) etalonId, taskNum, answerType, rightAnswer, points, orderMatters, checkMethod);
@@ -571,7 +573,7 @@ public class BaseActivity extends AppCompatActivity {
                         EditText complexPointsInput = row2.findViewById(R.id.complex_points_input);
                         int minMistakes = Integer.parseInt(minMistakesInput.getText().toString().trim());
                         int maxMistakes = Integer.parseInt(maxMistakesInput.getText().toString().trim());
-                        String complexPoints = complexPointsInput.getText().toString().trim();
+                        double complexPoints = Double.parseDouble(complexPointsInput.getText().toString().trim());
                         dbHelper.addComplexCriteria((int) answerId, minMistakes, maxMistakes, complexPoints);
                     }
                 }
@@ -601,8 +603,8 @@ public class BaseActivity extends AppCompatActivity {
             EditText minPointsInput = row.findViewById(R.id.min_points_input);
             EditText maxPointsInput = row.findViewById(R.id.max_points_input);
             TextView gradeView = row.findViewById(R.id.grade_view);
-            String minPoints = minPointsInput.getText().toString().trim();
-            String maxPoints = maxPointsInput.getText().toString().trim();
+            double minPoints = Double.parseDouble(minPointsInput.getText().toString().trim());
+            double maxPoints = Double.parseDouble(maxPointsInput.getText().toString().trim());
             String grade = gradeView.getText().toString().trim();
             dbHelper.addGrade((int) etalonId, minPoints, maxPoints, grade);
         }

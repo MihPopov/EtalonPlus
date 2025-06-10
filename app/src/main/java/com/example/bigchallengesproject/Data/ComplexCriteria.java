@@ -6,9 +6,9 @@ public class ComplexCriteria {
     private int answerId;
     private int minMistakes;
     private int maxMistakes;
-    private String points;
+    private double points;
 
-    public ComplexCriteria(int id, int answerId, int minMistakes, int maxMistakes, String points) {
+    public ComplexCriteria(int id, int answerId, int minMistakes, int maxMistakes, double points) {
         this.id = id;
         this.answerId = answerId;
         this.minMistakes = minMistakes;
@@ -20,5 +20,5 @@ public class ComplexCriteria {
     public int getAnswerId() { return answerId; }
     public int getMinMistakes() { return minMistakes; }
     public int getMaxMistakes() { return maxMistakes; }
-    public String getPoints() { return points; }
+    public double getPoints() { return points; }
 }

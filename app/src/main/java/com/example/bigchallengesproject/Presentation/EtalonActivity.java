@@ -145,13 +145,13 @@ public class EtalonActivity extends BaseActivity {
             etalonValues.put(DatabaseHelper.COLUMN_ICON, iconBytes);
 
             db.update(DatabaseHelper.TABLE_ETALONS, etalonValues, DatabaseHelper.COLUMN_ID + "=?", new String[]{String.valueOf(etalonId)});
-            Cursor cursor = db.query(DatabaseHelper.TABLE_ANSWERS, new String[]{DatabaseHelper.COLUMN_ANSWER_ID}, DatabaseHelper.COLUMN_ETALON_ID + "=?",
+            Cursor cursor = db.query(DatabaseHelper.TABLE_ANSWERS, new String[]{DatabaseHelper.COLUMN_ID}, DatabaseHelper.COLUMN_ETALON_ID + "=?",
                     new String[]{String.valueOf(etalonId)}, null, null, null);
             if (cursor.moveToFirst()) {
                 do {
-                    int answerId = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_ANSWER_ID));
-                    db.delete(DatabaseHelper.TABLE_COMPLEX_GRADING, DatabaseHelper.COLUMN_COMPLEX_GRADING_ANSWER_ID + "=?", new String[]{String.valueOf(answerId)});
-                    db.delete(DatabaseHelper.TABLE_CRITERIA, DatabaseHelper.COLUMN_CRITERIA_ANSWER_ID + "=?", new String[]{String.valueOf(answerId)});
+                    int answerId = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_ID));
+                    db.delete(DatabaseHelper.TABLE_COMPLEX_GRADING, DatabaseHelper.COLUMN_ANSWER_ID + "=?", new String[]{String.valueOf(answerId)});
+                    db.delete(DatabaseHelper.TABLE_CRITERIA, DatabaseHelper.COLUMN_ANSWER_ID + "=?", new String[]{String.valueOf(answerId)});
                 } while (cursor.moveToNext());
             }
             db.delete(DatabaseHelper.TABLE_ANSWERS, DatabaseHelper.COLUMN_ETALON_ID + "=?", new String[]{String.valueOf(etalonId)});
