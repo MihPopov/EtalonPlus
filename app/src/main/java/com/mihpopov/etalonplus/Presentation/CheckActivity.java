@@ -1,4 +1,4 @@
-package com.example.bigchallengesproject.Presentation;
+package com.mihpopov.etalonplus.Presentation;
 
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
@@ -36,14 +36,14 @@ import androidx.gridlayout.widget.GridLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.bigchallengesproject.Common.DatabaseHelper;
-import com.example.bigchallengesproject.Common.SimpleCallback;
-import com.example.bigchallengesproject.Common.AIService;
-import com.example.bigchallengesproject.Data.Answer;
-import com.example.bigchallengesproject.Data.ComplexCriteria;
-import com.example.bigchallengesproject.Data.Etalon;
-import com.example.bigchallengesproject.Data.Grade;
-import com.example.bigchallengesproject.R;
+import com.mihpopov.etalonplus.Common.DatabaseHelper;
+import com.mihpopov.etalonplus.Common.SimpleCallback;
+import com.mihpopov.etalonplus.Common.AIService;
+import com.mihpopov.etalonplus.Data.Answer;
+import com.mihpopov.etalonplus.Data.ComplexCriteria;
+import com.mihpopov.etalonplus.Data.Etalon;
+import com.mihpopov.etalonplus.Data.Grade;
+import com.mihpopov.etalonplus.R;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.components.Legend;

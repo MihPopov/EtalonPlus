@@ -1,4 +1,4 @@
-package com.example.bigchallengesproject;
+package com.mihpopov.etalonplus;
 
 import org.junit.Test;
 

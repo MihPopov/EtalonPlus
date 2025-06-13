@@ -1,4 +1,4 @@
-package com.example.bigchallengesproject.Presentation;
+package com.mihpopov.etalonplus.Presentation;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -13,8 +13,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.bigchallengesproject.Data.Etalon;
-import com.example.bigchallengesproject.R;
+import com.mihpopov.etalonplus.Data.Etalon;
+import com.mihpopov.etalonplus.R;
 
 import java.util.List;
 

@@ -1,4 +1,4 @@
-package com.example.bigchallengesproject.Presentation;
+package com.mihpopov.etalonplus.Presentation;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;

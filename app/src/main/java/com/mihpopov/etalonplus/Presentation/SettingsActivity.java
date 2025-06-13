@@ -1,4 +1,4 @@
-package com.example.bigchallengesproject.Presentation;
+package com.mihpopov.etalonplus.Presentation;
 
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
@@ -17,8 +17,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
-import com.example.bigchallengesproject.Common.DatabaseHelper;
-import com.example.bigchallengesproject.R;
+import com.mihpopov.etalonplus.Common.DatabaseHelper;
+import com.mihpopov.etalonplus.R;
 import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.textfield.TextInputEditText;
 

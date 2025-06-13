@@ -1,4 +1,4 @@
-package com.example.bigchallengesproject.Common;
+package com.mihpopov.etalonplus.Common;
 
 public interface SimpleCallback<T> {
 

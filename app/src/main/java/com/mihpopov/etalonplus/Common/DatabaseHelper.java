@@ -1,4 +1,4 @@
-package com.example.bigchallengesproject.Common;
+package com.mihpopov.etalonplus.Common;
 
 import android.annotation.SuppressLint;
 import android.content.ContentValues;
@@ -8,10 +8,10 @@ import android.database.CursorWindow;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
-import com.example.bigchallengesproject.Data.Answer;
-import com.example.bigchallengesproject.Data.ComplexCriteria;
-import com.example.bigchallengesproject.Data.Etalon;
-import com.example.bigchallengesproject.Data.Grade;
+import com.mihpopov.etalonplus.Data.Answer;
+import com.mihpopov.etalonplus.Data.ComplexCriteria;
+import com.mihpopov.etalonplus.Data.Etalon;
+import com.mihpopov.etalonplus.Data.Grade;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;

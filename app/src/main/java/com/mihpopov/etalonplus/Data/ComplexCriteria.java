@@ -1,4 +1,4 @@
-package com.example.bigchallengesproject.Data;
+package com.mihpopov.etalonplus.Data;
 
 public class ComplexCriteria {
 

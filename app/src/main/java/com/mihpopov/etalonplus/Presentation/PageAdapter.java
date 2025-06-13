@@ -1,4 +1,4 @@
-package com.example.bigchallengesproject.Presentation;
+package com.mihpopov.etalonplus.Presentation;
 
 import android.annotation.SuppressLint;
 import android.view.LayoutInflater;
@@ -10,7 +10,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.bigchallengesproject.R;
+import com.mihpopov.etalonplus.R;
 
 import java.text.DecimalFormat;
 import java.util.List;

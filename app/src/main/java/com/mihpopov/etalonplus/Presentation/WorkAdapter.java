@@ -1,4 +1,4 @@
-package com.example.bigchallengesproject.Presentation;
+package com.mihpopov.etalonplus.Presentation;
 
 import android.annotation.SuppressLint;
 import android.net.Uri;
@@ -7,7 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.example.bigchallengesproject.R;
+import com.mihpopov.etalonplus.R;
 import com.google.android.material.card.MaterialCardView;
 
 import androidx.annotation.NonNull;

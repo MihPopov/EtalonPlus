@@ -1,4 +1,4 @@
-package com.example.bigchallengesproject.Common;
+package com.mihpopov.etalonplus.Common;
 
 import android.content.Context;
 import android.graphics.Bitmap;

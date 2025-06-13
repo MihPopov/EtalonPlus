@@ -1,4 +1,4 @@
-package com.example.bigchallengesproject.Presentation;
+package com.mihpopov.etalonplus.Presentation;
 
 import static android.view.View.VISIBLE;
 
@@ -19,8 +19,8 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.bigchallengesproject.Common.DatabaseHelper;
-import com.example.bigchallengesproject.R;
+import com.mihpopov.etalonplus.Common.DatabaseHelper;
+import com.mihpopov.etalonplus.R;
 import com.google.android.material.textfield.TextInputEditText;
 
 public class StorageActivity extends BaseActivity {

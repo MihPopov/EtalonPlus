@@ -1,4 +1,4 @@
-package com.example.bigchallengesproject;
+package com.mihpopov.etalonplus;
 
 import android.content.Context;
 
