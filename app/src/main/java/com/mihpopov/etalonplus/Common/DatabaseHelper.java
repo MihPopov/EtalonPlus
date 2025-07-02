@@ -17,6 +17,10 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Класс для работы с локальной базой данных SQLite.
+ * Содержит методы для управления эталонами, ответами, критериями и оценками, в том числе их системой.
+ */
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "etalons_db";
@@ -57,6 +61,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
+    // Создание таблиц
     @Override
     public void onCreate(SQLiteDatabase db) {
         String createEtalonTable = "CREATE TABLE " + TABLE_ETALONS + " (" +
@@ -129,6 +134,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
+    // Добавление нового эталона
     public long addEtalon(String name, byte[] icon, String date, int tasksCount) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -139,6 +145,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return db.insert(TABLE_ETALONS, null, values);
     }
 
+    // Добавление ответа с кратким ответом
     public long addAnswer(int etalonId, int taskNumber, String answerType, String rightAnswer, double points, int orderMatters, String checkMethod) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -152,6 +159,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return db.insert(TABLE_ANSWERS, null, values);
     }
 
+    // Добавление ответа с развернутым ответом
     public long addAnswer(int etalonId, int taskNumber, String answerType) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -161,6 +169,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return db.insert(TABLE_ANSWERS, null, values);
     }
 
+    // Добавление диапазона ошибок для поэлементной оценки
     public void addComplexCriteria(int answerId, int minMistakes, int maxMistakes, double points) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -171,6 +180,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.insert(TABLE_COMPLEX_GRADING, null, values);
     }
 
+    // Добавление изображения критериев оценивания
     public void addCriteria(int answerId, byte[] imageData) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -179,6 +189,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.insert(TABLE_CRITERIA, null, values);
     }
 
+    // Добавление диапазона баллов для оценки
     public void addGrade(int etalonId, double minPoints, double maxPoints, String grade) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -189,6 +200,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.insert(TABLE_GRADES, null, values);
     }
 
+    // Получение списка всех эталонов
     public List<Etalon> getAllEtalons() {
         List<Etalon> etalonList = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
@@ -213,6 +225,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return etalonList;
     }
 
+    //Полное удаление эталона
     public void deleteEtalon(int etalonId) {
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor = db.query(TABLE_ANSWERS, new String[]{COLUMN_ID}, COLUMN_ETALON_ID + "=?",
@@ -231,6 +244,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
     }
 
+    // Получение эталона по ID
     public Etalon getEtalonById(int etalonId) {
         SQLiteDatabase db = this.getReadableDatabase();
         Etalon etalon = null;
@@ -248,6 +262,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return etalon;
     }
 
+    // Получение всех ответов для эталона
     public List<Answer> getAnswersByEtalonId(int etalonId) {
         List<Answer> answers = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
@@ -273,6 +288,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return answers;
     }
 
+    // Получение системы оценивания для поэлементной оценки краткого ответа
     public List<ComplexCriteria> getComplexGradingByAnswerId(int answerId) {
         List<ComplexCriteria> gradingList = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
@@ -291,6 +307,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return gradingList;
     }
 
+    // Получение изображений критериев оценивания
     public List<byte[]> getCriteriaByAnswerId(int answerId) {
         List<byte[]> criteria = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
@@ -310,6 +327,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return criteria;
     }
 
+    // Получение шкалы оценок для эталона
     public List<Grade> getGradesByEtalonId(int etalonId) {
         List<Grade> grades = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
@@ -328,6 +346,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return grades;
     }
 
+    // Получение системы оценок
     public List<String> getGradesSystem() {
         List<String> grades = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
@@ -341,6 +360,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return grades;
     }
 
+    // Обновление системы оценок
     public void updateGradesSystem(List<String> newGrades) {
         SQLiteDatabase db = this.getWritableDatabase();
         db.execSQL("DELETE FROM " + TABLE_GRADES_SYSTEM);

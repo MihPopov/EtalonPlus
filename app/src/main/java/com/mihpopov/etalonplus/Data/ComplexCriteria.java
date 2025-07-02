@@ -1,5 +1,8 @@
 package com.mihpopov.etalonplus.Data;
 
+/**
+ * Класс ComplexCriteria представляет диапазон ошибок в задании с поэлементным оцениванием задания с кратким ответом.
+ */
 public class ComplexCriteria {
 
     private int id;
@@ -17,7 +20,6 @@ public class ComplexCriteria {
     }
 
     public int getId() { return id; }
-    public int getAnswerId() { return answerId; }
     public int getMinMistakes() { return minMistakes; }
     public int getMaxMistakes() { return maxMistakes; }
     public double getPoints() { return points; }

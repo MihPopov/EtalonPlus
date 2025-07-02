@@ -17,6 +17,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Адаптер для отображения списка работ в RecyclerView.
+ */
 public class WorkAdapter extends RecyclerView.Adapter<WorkAdapter.WorkViewHolder> {
 
     private final List<WorkItem> works;

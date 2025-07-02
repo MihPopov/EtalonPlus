@@ -15,6 +15,9 @@ import com.mihpopov.etalonplus.R;
 import java.text.DecimalFormat;
 import java.util.List;
 
+/**
+ * Адаптер для отображения списка страниц работы (и не только) в RecyclerView с возможностью из удаления.
+ */
 public class PageAdapter extends RecyclerView.Adapter<PageAdapter.PageViewHolder> {
 
     private final List<WorkAdapter.PageItem> pages;

@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "com.mihpopov.etalonplus"
-        minSdk = 29
+        minSdk = 26
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -17,7 +17,6 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         ndk {
-            //noinspection ChromeOsAbiSupport
             abiFilters += listOf("arm64-v8a")
         }
     }
@@ -57,6 +56,8 @@ dependencies {
     implementation(libs.poi)
     implementation(libs.poi.ooxml)
     implementation(libs.mpandroidchart)
+    implementation(libs.work.runtime)
+    implementation(libs.gson)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

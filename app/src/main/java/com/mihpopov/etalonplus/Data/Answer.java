@@ -1,5 +1,8 @@
 package com.mihpopov.etalonplus.Data;
 
+/**
+ * Класс Answer представляет ответ на задание в системе.
+ */
 public class Answer {
 
     private int id;
@@ -11,6 +14,7 @@ public class Answer {
     private int orderMatters;
     private String checkMethod;
 
+    //Конструктор для крактих ответов
     public Answer(int id, int etalonId, int taskNumber, String answerType, String rightAnswer, double points, int orderMatters, String checkMethod) {
         this.id = id;
         this.etalonId = etalonId;
@@ -22,6 +26,7 @@ public class Answer {
         this.checkMethod = checkMethod;
     }
 
+    //Конструктор для развёрнутых ответов
     public Answer(int id, int etalonId, int taskNumber, String answerType) {
         this.id = id;
         this.etalonId = etalonId;
@@ -30,9 +35,6 @@ public class Answer {
     }
 
     public int getId() { return id; }
-    public int getEtalonId() {
-        return etalonId;
-    }
     public int getTaskNumber() { return taskNumber; }
     public String getAnswerType() {
         return answerType;

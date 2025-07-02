@@ -18,6 +18,9 @@ import com.mihpopov.etalonplus.R;
 
 import java.util.List;
 
+/**
+ * Активность для просмотра и использования существующих эталонов в активности проверки работ.
+ */
 public class EtalonsUseAdapter extends RecyclerView.Adapter<EtalonsUseAdapter.EtalonViewHolder> {
 
     private Context context;

@@ -10,6 +10,9 @@ import com.github.mikephil.charting.renderer.LineChartRenderer;
 import com.github.mikephil.charting.utils.ViewPortHandler;
 import com.github.mikephil.charting.utils.Transformer;
 
+/**
+ * Кастомный рендерер для отображения точек на графике выполнения заданий в виде квадратов.
+ */
 public class SquarePointRenderer extends LineChartRenderer {
     private final Paint mSquarePaint;
     private float mSquareSize = 16f;

@@ -27,6 +27,9 @@ import com.google.android.material.textfield.TextInputEditText;
 import java.io.ByteArrayOutputStream;
 import java.util.List;
 
+/**
+ * Активность для просмотра и редактирования существующего эталона.
+ */
 public class EtalonActivity extends BaseActivity {
 
     int etalonId;
@@ -54,6 +57,7 @@ public class EtalonActivity extends BaseActivity {
         dbHelper = new DatabaseHelper(this);
 
         initAdapters();
+        // Загрузка данных эталона по ID
         etalonId = getIntent().getIntExtra("etalon_id", -1);
         if (etalonId != -1) {
             Etalon etalon = dbHelper.getEtalonById(etalonId);
@@ -120,6 +124,7 @@ public class EtalonActivity extends BaseActivity {
         startActivity(new Intent(EtalonActivity.this, StorageActivity.class));
     }
 
+    // Сохранение изменений эталона, если есть
     public void onSaveEtalonClick(View view) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         try {

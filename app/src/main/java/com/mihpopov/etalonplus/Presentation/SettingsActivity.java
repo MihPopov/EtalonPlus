@@ -26,6 +26,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Активность для управления настройками приложения: распознавания работ, структуры и содержания таблицы Excel при выгрузке результатов проверки
+ */
 public class SettingsActivity extends AppCompatActivity {
 
     androidx.gridlayout.widget.GridLayout gradesSystemTable;
@@ -88,6 +91,7 @@ public class SettingsActivity extends AppCompatActivity {
         startActivity(new Intent(SettingsActivity.this, HomeActivity.class));
     }
 
+    //Сохранение настроек
     public void onSaveSettingsClick(View view) {
         String tableName = tableNameInput.getText().toString().trim();
         if (tableName.isEmpty()) {

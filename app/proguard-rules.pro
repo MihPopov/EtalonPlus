@@ -55,3 +55,11 @@
 -dontwarn org.osgi.framework.BundleContext
 -dontwarn org.osgi.framework.FrameworkUtil
 -dontwarn org.osgi.framework.ServiceReference
+-dontwarn java.awt.geom.Rectangle2D$Double
+-dontwarn org.apache.batik.anim.dom.SAXSVGDocumentFactory
+-dontwarn org.apache.batik.bridge.BridgeContext
+-dontwarn org.apache.batik.bridge.DocumentLoader
+-dontwarn org.apache.batik.bridge.GVTBuilder
+-dontwarn org.apache.batik.bridge.UserAgent
+-dontwarn org.apache.batik.bridge.UserAgentAdapter
+-dontwarn org.apache.batik.util.XMLResourceDescriptor

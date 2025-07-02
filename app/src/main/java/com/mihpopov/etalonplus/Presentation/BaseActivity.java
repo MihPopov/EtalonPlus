@@ -58,6 +58,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * Базовый класс для активности, содержащий общую логику для работы с эталонами, ответами и изображениями.
+ * Предоставляет методы для инициализации адаптеров, работы с камерой, обработки изображений и валидации таблиц.
+ */
 public class BaseActivity extends AppCompatActivity {
 
     protected static final int PICK_WORKS_REQUEST = 1;
@@ -85,6 +89,7 @@ public class BaseActivity extends AppCompatActivity {
     ArrayAdapter<String> checkMethodsAdapter;
     ArrayAdapter<String> answerTypesAdapter;
 
+    // Инициализация адаптеров
     public void initAdapters() {
         checkMethodsAdapter = new ArrayAdapter<>(this, R.layout.spinner_item, CHECK_METHODS);
         checkMethodsAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
@@ -92,6 +97,7 @@ public class BaseActivity extends AppCompatActivity {
         answerTypesAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
     }
 
+    // Методы для работы с камерой и галереей
     protected void setPickImagesRequest(int code) {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.setType("image/*");
@@ -154,6 +160,7 @@ public class BaseActivity extends AppCompatActivity {
         }
     }
 
+    //Декодировка страниц
     public List<WorkAdapter.PageItem> convertBytesToPageItems(Context context, List<byte[]> byteArrays) {
         List<WorkAdapter.PageItem> pageItems = new ArrayList<>();
         File tempDir = new File(context.getCacheDir(), "temp_images");
@@ -168,13 +175,13 @@ public class BaseActivity extends AppCompatActivity {
                     fos.write(imageData);
                     Uri fileUri = FileProvider.getUriForFile(context, context.getApplicationContext().getPackageName() + ".provider", tempFile);
                     pageItems.add(new WorkAdapter.PageItem(fileUri, tempFile.length()));
-
                 } catch (IOException e) {}
             }
         }
         return pageItems;
     }
 
+    //Инициализация выпадающего списка с типами ответа на задание
     @SuppressLint("SetTextI18n")
     protected void setupAnswerTypesDropdown(Spinner answerTypesDropdown, View row, int finalI, Context context,
                                             androidx.gridlayout.widget.GridLayout detailedTable, List<byte[]> criteria, Answer answer) {
@@ -274,6 +281,7 @@ public class BaseActivity extends AppCompatActivity {
         });
     }
 
+    //Инициализация выпадающего списка с выбором метода проверки
     protected void setupCheckMethodsDropdown(Spinner checkMethodsDropdown, View row, Answer answer) {
         androidx.gridlayout.widget.GridLayout complexGradingTable = row.findViewById(R.id.complex_grading_table);
         CardView editComplexGradingTableCard = row.findViewById(R.id.edit_complex_grading_table_card);
@@ -353,6 +361,7 @@ public class BaseActivity extends AppCompatActivity {
         }
     }
 
+    //Инициализация слушателя изменений поля ввода
     protected void setupTextChangedListener(TextInputEditText tasksCountInput, Context context, androidx.gridlayout.widget.GridLayout answersTable,
                                             androidx.gridlayout.widget.GridLayout detailedTable) {
         tasksCountInput.addTextChangedListener(new TextWatcher() {
@@ -411,6 +420,7 @@ public class BaseActivity extends AppCompatActivity {
         });
     }
 
+    //Методы для работы с адаптерами
     public void handleEtalonImageSelection(@Nullable Intent data) {
         if (data == null || data.getData() == null) return;
         Uri imageUri = data.getData();
@@ -476,53 +486,47 @@ public class BaseActivity extends AppCompatActivity {
         }
     }
 
+    // Валидация таблиц с ответами и оценками
     public boolean isTablesCorrect(androidx.gridlayout.widget.GridLayout answersTable, androidx.gridlayout.widget.GridLayout gradesTable) {
-        List<Integer> detailedTasks = new ArrayList<>(detailedTaskPagesMap.keySet());
-        for (int i = 1; i < answersTable.getChildCount(); i++) {
-            if (detailedTasks.contains(i)) continue;
-            View row = answersTable.getChildAt(i);
-            EditText answer = row.findViewById(R.id.right_answer_input);
-            EditText points = row.findViewById(R.id.points_input);
-            Spinner checkMethodDropdown = row.findViewById(R.id.check_method_dropdown);
-            if (answer.getText().toString().isEmpty()) return false;
-            try {
+        try {
+            if (gradesTable.getChildAt(1) == null) return false;
+            List<Integer> detailedTasks = new ArrayList<>(detailedTaskPagesMap.keySet());
+            for (int i = 1; i < answersTable.getChildCount(); i++) {
+                if (detailedTasks.contains(i)) continue;
+                View row = answersTable.getChildAt(i);
+                EditText answer = row.findViewById(R.id.right_answer_input);
+                EditText points = row.findViewById(R.id.points_input);
+                Spinner checkMethodDropdown = row.findViewById(R.id.check_method_dropdown);
+                if (answer.getText().toString().isEmpty()) return false;
                 Double.parseDouble(points.getText().toString().trim());
-            } catch (NumberFormatException e) {
-                return false;
-            }
-            if (checkMethodDropdown.getSelectedItem().equals("Поэлементное совпадение")) {
-                androidx.gridlayout.widget.GridLayout complexGradingTable = row.findViewById(R.id.complex_grading_table);
-                for (int j = 1; j < complexGradingTable.getChildCount() - 1; j++) {
-                    View row2 = complexGradingTable.getChildAt(j);
-                    EditText minMistakesInput = row2.findViewById(R.id.min_mistakes_input);
-                    EditText maxMistakesInput = row2.findViewById(R.id.max_mistakes_input);
-                    EditText complexPointsInput = row2.findViewById(R.id.complex_points_input);
-                    try {
+                if (checkMethodDropdown.getSelectedItem().equals("Поэлементное совпадение")) {
+                    androidx.gridlayout.widget.GridLayout complexGradingTable = row.findViewById(R.id.complex_grading_table);
+                    for (int j = 1; j < complexGradingTable.getChildCount() - 1; j++) {
+                        View row2 = complexGradingTable.getChildAt(j);
+                        EditText minMistakesInput = row2.findViewById(R.id.min_mistakes_input);
+                        EditText maxMistakesInput = row2.findViewById(R.id.max_mistakes_input);
+                        EditText complexPointsInput = row2.findViewById(R.id.complex_points_input);
                         Integer.parseInt(minMistakesInput.getText().toString().trim());
                         Integer.parseInt(maxMistakesInput.getText().toString().trim());
                         Double.parseDouble(complexPointsInput.getText().toString().trim());
-                    } catch (NumberFormatException e) {
-                        return false;
                     }
                 }
             }
-        }
-        for (int i = 0; i < detailedTasks.size(); i++) {
-            List<WorkAdapter.PageItem> data = detailedTaskPagesMap.get(detailedTasks.get(i));
-            if (data.isEmpty()) return false;
-        }
-        for (int i = 1; i < gradesTable.getChildCount(); i++) {
-            View row = gradesTable.getChildAt(i);
-            EditText minPoints = row.findViewById(R.id.min_points_input);
-            EditText maxPoints = row.findViewById(R.id.max_points_input);
-            try {
+            for (int i = 0; i < detailedTasks.size(); i++) {
+                List<WorkAdapter.PageItem> data = detailedTaskPagesMap.get(detailedTasks.get(i));
+                if (data.isEmpty()) return false;
+            }
+            for (int i = 1; i < gradesTable.getChildCount(); i++) {
+                View row = gradesTable.getChildAt(i);
+                EditText minPoints = row.findViewById(R.id.min_points_input);
+                EditText maxPoints = row.findViewById(R.id.max_points_input);
                 Double.parseDouble(minPoints.getText().toString().trim());
                 Double.parseDouble(maxPoints.getText().toString().trim());
-            } catch (NumberFormatException e) {
-                return false;
             }
+            return true;
+        } catch (Exception e) {
+            return false;
         }
-        return true;
     }
 
     @SuppressLint("SetTextI18n")
@@ -545,6 +549,7 @@ public class BaseActivity extends AppCompatActivity {
         }
     }
 
+    // Сохранение ответов и критериев
     protected void saveAnswersAndCriteria(long etalonId, androidx.gridlayout.widget.GridLayout answersTable, Context context) {
         for (int i = 1; i < answersTable.getChildCount(); i++) {
             View row = answersTable.getChildAt(i);
@@ -609,6 +614,7 @@ public class BaseActivity extends AppCompatActivity {
         }
     }
 
+    // Создание нового эталона
     protected void createEtalon(Context context, TextInputEditText tasksCountInput, TextInputEditText etalonNameInput,
                                         androidx.gridlayout.widget.GridLayout answersTable, androidx.gridlayout.widget.GridLayout gradesTable) {
         if (!isTablesCorrect(answersTable, gradesTable)) {

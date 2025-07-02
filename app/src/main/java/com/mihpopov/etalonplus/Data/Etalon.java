@@ -1,5 +1,8 @@
 package com.mihpopov.etalonplus.Data;
 
+/**
+ * Класс Etalon представляет эталон (шаблон) для проверки заданий.
+ */
 public class Etalon {
     private int id;
     private String name;
@@ -17,16 +20,9 @@ public class Etalon {
 
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
-
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
-
     public byte[] getIcon() { return icon; }
-    public void setIcon(byte[] icon) { this.icon = icon; }
-
     public String getCreationDate() { return creationDate; }
-    public void setCreationDate(String creationDate) { this.creationDate = creationDate; }
-
     public int getTasksCount() { return tasksCount; }
-    public void setTasksCount(int tasksCount) { this.tasksCount = tasksCount; }
 }

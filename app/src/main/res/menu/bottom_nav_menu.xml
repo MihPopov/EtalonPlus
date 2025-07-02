@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_upload"
+        android:icon="@drawable/upload"
+        android:title="Работы" />
+
+    <item
+        android:id="@+id/nav_templates"
+        android:icon="@drawable/open"
+        android:title="Шаблон" />
+
+    <item
+        android:id="@+id/nav_recognition"
+        android:icon="@drawable/eye"
+        android:title="Распозн." />
+
+    <item
+        android:id="@+id/nav_results"
+        android:icon="@drawable/check"
+        android:title="Результаты" />
+</menu>

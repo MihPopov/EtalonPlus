@@ -13,6 +13,10 @@ import com.chaquo.python.android.AndroidPlatform;
 import java.io.*;
 import java.util.*;
 
+/**
+ * Класс для работы с ИИ в приложении, взаимодействия с Python-скриптами через Chaquopy.
+ * Обеспечивает распознавание ответов и проверку заданий с развёрнутым ответом.
+ */
 public class AIService {
 
     Python py;
@@ -30,6 +34,7 @@ public class AIService {
         new CheckDetailedTask(py, callback, taskNum).execute(workPages, criteria);
     }
 
+    //Распознавание ответов
     private static class RecognitionTask extends AsyncTask<Bitmap, Void, HashMap<Integer, String>> {
 
         private final Python python;
@@ -100,6 +105,7 @@ public class AIService {
         }
     }
 
+    //Проверка заданий с развёрнутым ответом
     private static class CheckDetailedTask extends AsyncTask<List<Bitmap>, Void, HashMap<String, Pair<Integer, String>>> {
         private final Python python;
         private final SimpleCallback<HashMap<String, Pair<Integer, String>>> callback;

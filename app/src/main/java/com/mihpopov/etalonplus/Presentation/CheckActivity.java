@@ -6,11 +6,9 @@ import static android.view.View.VISIBLE;
 import android.annotation.SuppressLint;
 import android.content.ContentUris;
 import android.content.ContentValues;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
@@ -18,27 +16,42 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.util.Pair;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AnimationUtils;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ViewFlipper;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.gridlayout.widget.GridLayout;
+import androidx.lifecycle.Observer;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.work.Data;
+import androidx.work.ExistingWorkPolicy;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkInfo;
+import androidx.work.WorkManager;
 
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.navigation.NavigationBarView;
+import com.mihpopov.etalonplus.Common.CheckWorker;
+import com.mihpopov.etalonplus.Common.DataStore;
 import com.mihpopov.etalonplus.Common.DatabaseHelper;
-import com.mihpopov.etalonplus.Common.SimpleCallback;
-import com.mihpopov.etalonplus.Common.AIService;
+import com.mihpopov.etalonplus.Common.NotificationUtils;
+import com.mihpopov.etalonplus.Common.RecognitionWorker;
 import com.mihpopov.etalonplus.Data.Answer;
 import com.mihpopov.etalonplus.Data.ComplexCriteria;
 import com.mihpopov.etalonplus.Data.Etalon;
@@ -95,7 +108,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -103,10 +115,15 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+/**
+ * Активность для проверки работ учащихся.
+ * Содержит логику распознавания текста, проверки ответов и отображения результатов.
+ */
 public class CheckActivity extends BaseActivity {
 
     private static final Pattern NUMBER_PATTERN = Pattern.compile("^-?\\d+([.,]\\d+)?$");
@@ -114,14 +131,15 @@ public class CheckActivity extends BaseActivity {
     private static final Pattern EN_LETTERS = Pattern.compile("^[a-zA-Z]+$");
     int k = 0;
     boolean cardGone = false;
+    boolean checkUnlocked = false;
 
     CardView uploadCard, cameraCard, tablesPageCard, templateSaveCard, etalonSaveCard;
     RecyclerView worksRecyclerView, etalonsRecyclerView;
     WorkAdapter workAdapter;
     EtalonsUseAdapter etalonsUseAdapter;
     ScrollView scrollView;
-    LinearLayout tablesPage, recognizedTextPage, recognizedTextTablesLayout, checkWorksLayout, resultsDetailedLayout,
-            resultsDetailedTablesLayout, etalonCreationLayout, templateCreationLayout, etalonsListLayout;
+    LinearLayout uploadWorksPage, templatePage, tablesLayout, recognizedTextPage, recognizedTextTablesLayout, checkWorksPage, resultsDetailedLayout,
+            resultsDetailedTablesLayout, etalonCreationLayout, templateCreationLayout, etalonsListLayout, resultsLayout;
     androidx.gridlayout.widget.GridLayout answersTable, detailedAnswersTable, gradesTable, recTextTable, resultsTable, resultsDetailedTable,
             gradesDistributionTable, tasksCompletingTable, cheatersTable;
     PieChart gradesDistributionChart;
@@ -129,6 +147,8 @@ public class CheckActivity extends BaseActivity {
     TextInputEditText tasksCountInput, etalonNameInput;
     AppBarLayout waitAppBarLayout;
     TextView remainingTime, waitingText;
+    BottomNavigationView bottomNav;
+    ViewFlipper viewFlipper;
 
     List<WorkAdapter.WorkItem> works = new ArrayList<>();
     SharedPreferences settings;
@@ -147,6 +167,7 @@ public class CheckActivity extends BaseActivity {
         waitingText = findViewById(R.id.waiting_text);
         remainingTime = findViewById(R.id.remaining_time);
         scrollView = findViewById(R.id.scrollview);
+        viewFlipper = findViewById(R.id.view_flipper);
         uploadCard = findViewById(R.id.upload_card);
         cameraCard = findViewById(R.id.camera_card);
         worksRecyclerView = findViewById(R.id.recycler_view_works);
@@ -154,14 +175,15 @@ public class CheckActivity extends BaseActivity {
         etalonsListLayout = findViewById(R.id.etalons_list_layout);
         etalonsRecyclerView = findViewById(R.id.recycler_view_etalons_available);
         tablesPageCard = findViewById(R.id.tables_page_card);
-        tablesPage = findViewById(R.id.tables_page);
+        tablesLayout = findViewById(R.id.tables_layout);
         answersTable = findViewById(R.id.answers_table);
         detailedAnswersTable = findViewById(R.id.detailed_answers_table);
         gradesTable = findViewById(R.id.grades_table);
         tasksCountInput = findViewById(R.id.tasks_count_input);
         recognizedTextPage = findViewById(R.id.recognized_text_page);
         recognizedTextTablesLayout = findViewById(R.id.rec_tables_layout);
-        checkWorksLayout = findViewById(R.id.check_works_page);
+        checkWorksPage = findViewById(R.id.check_works_page);
+        resultsLayout = findViewById(R.id.results_layout);
         resultsTable = findViewById(R.id.results_table);
         resultsDetailedLayout = findViewById(R.id.results_detailed_layout);
         resultsDetailedTablesLayout = findViewById(R.id.res_detailed_tables_layout);
@@ -175,6 +197,9 @@ public class CheckActivity extends BaseActivity {
         etalonNameInput = findViewById(R.id.etalon_check_name_input);
         etalonIcon = findViewById(R.id.icon_preview_check);
         etalonSaveCard = findViewById(R.id.save_etalon_card);
+        bottomNav = findViewById(R.id.bottom_nav);
+        uploadWorksPage = findViewById(R.id.upload_works_page);
+        templatePage = findViewById(R.id.template_page);
 
         settings = getSharedPreferences("Preferences", MODE_PRIVATE);
 
@@ -194,6 +219,9 @@ public class CheckActivity extends BaseActivity {
         });
         worksRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         worksRecyclerView.setAdapter(workAdapter);
+
+        viewFlipper.setInAnimation(AnimationUtils.loadAnimation(this, R.anim.slide_in_right));
+        viewFlipper.setOutAnimation(AnimationUtils.loadAnimation(this, R.anim.slide_out_left));
 
         initAdapters();
         etalonList = dbHelper.getAllEtalons();
@@ -238,7 +266,40 @@ public class CheckActivity extends BaseActivity {
                 openCamera();
             }
         });
+
+        bottomNav.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                uploadWorksPage.setVisibility(View.GONE);
+                templatePage.setVisibility(View.GONE);
+                recognizedTextPage.setVisibility(View.GONE);
+                checkWorksPage.setVisibility(View.GONE);
+                int itemId = item.getItemId();
+                if (itemId == R.id.nav_upload) showPage(uploadWorksPage, 0, templatePage, recognizedTextPage, checkWorksPage);
+                else if (itemId == R.id.nav_templates) showPage(templatePage, 1, uploadWorksPage, recognizedTextPage, checkWorksPage);
+                else if (itemId == R.id.nav_recognition) showPage(recognizedTextPage, 2, uploadWorksPage, templatePage, checkWorksPage);
+                else if (checkUnlocked) showPage(checkWorksPage, 3, uploadWorksPage, templatePage, recognizedTextPage);
+                else Toast.makeText(CheckActivity.this, "Сначала пройдите этап распознавания работ!", Toast.LENGTH_SHORT).show();
+                return true;
+            }
+        });
     }
+
+    private void showPage(LinearLayout toShow, int n, LinearLayout... others) {
+        toShow.setVisibility(View.VISIBLE);
+        ViewGroup.LayoutParams param = toShow.getLayoutParams();
+        param.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+        toShow.setLayoutParams(param);
+        for (LinearLayout page : others) {
+            page.setVisibility(View.GONE);
+            ViewGroup.LayoutParams lpHidden = page.getLayoutParams();
+            lpHidden.height = 0;
+            page.setLayoutParams(lpHidden);
+        }
+        scrollView.scrollTo(0, 0);
+        viewFlipper.setDisplayedChild(n);
+    }
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
@@ -279,6 +340,7 @@ public class CheckActivity extends BaseActivity {
         }
     }
 
+    //Методы работы с адаптерами работ и критериев оценивания
     private void handleWorksSelection(@Nullable Intent data) {
         if (data == null) return;
         if (data.getClipData() != null) {
@@ -328,7 +390,7 @@ public class CheckActivity extends BaseActivity {
             Toast.makeText(this, "Напишите количество заданий корреткно!", Toast.LENGTH_SHORT).show();
             return;
         }
-        tablesPage.setVisibility(VISIBLE);
+        tablesLayout.setVisibility(VISIBLE);
         answersTable.removeAllViews();
         answersTable.addView(getLayoutInflater().inflate(R.layout.table_answers_header, null));
         for (int i = 1; i <= tasksCount; i++) {
@@ -352,70 +414,137 @@ public class CheckActivity extends BaseActivity {
         scrollView.post(new Runnable() {
             @Override
             public void run() {
-                scrollView.smoothScrollTo(0, tablesPage.getBottom());
+                scrollView.smoothScrollTo(0, tablesLayout.getBottom());
             }
         });
     }
 
-    @SuppressLint("SetTextI18n")
-    public void onRecognizedTextPageClick(View view) throws Exception {
-        if (works.isEmpty()) {
-            Toast.makeText(this, "Загрузите работы для проверки!", Toast.LENGTH_SHORT).show();
+    public void startWorker(View view) {
+        if (!isTablesCorrect(answersTable, gradesTable)) {
+            Toast.makeText(this, "Проверьте корректность заполнения таблиц на странице 2!", Toast.LENGTH_SHORT).show();
             return;
         }
-        recognizedTextPage.setVisibility(VISIBLE);
-        recognizedTextTablesLayout.removeAllViews();
-        recTextTable = new androidx.gridlayout.widget.GridLayout(this);
-        recTextTable.setLayoutParams(new ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT));
-        recTextTable.setColumnCount(1);
-        recTextTable.setBackgroundColor(getResources().getColor(R.color.dark_green));
-        recTextTable.addView(getLayoutInflater().inflate(R.layout.table_recognized_text_header, null));
-        recognizedTextTablesLayout.addView(recTextTable);
-        int tasksCount = Integer.parseInt(tasksCountInput.getText().toString());
-        String taskTypes = getTaskTypes();
-        k = 0;
-        waitingText.setText("Пожалуйста, подождите, пока текст работ не будет распознан");
-        waitAppBarLayout.setVisibility(View.VISIBLE);
-        waitAppBarLayout.animate()
-                .translationY(0)
-                .setDuration(300)
-                .start();
-        int waitTime = 2 * tasksCount * works.size();
-        AIService aiService = new AIService(this);
-        initTimer(waitTime * 1000L);
-        for (int i = 0; i < works.size(); i++) {
-            int finalI = i;
-            List<Bitmap> pages = getBitmapsFromPages(this, works.get(i).getPages());
-            aiService.recognizeTestAnswers(pages, new SimpleCallback<HashMap<Integer, String>>() {
-                @Override
-                public void onLoad(HashMap<Integer, String> answersMap) {
-                    if (finalI == works.size() - 1) {
-                        timer.cancel();
-                        waitAppBarLayout.animate()
-                                .translationY(-waitAppBarLayout.getHeight())
-                                .setDuration(300)
-                                .withEndAction(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        waitAppBarLayout.setVisibility(View.GONE);
-                                    }
-                                })
-                                .start();
-                    }
-                    createRecTable(tasksCount, finalI, answersMap);
-                }
-            }, taskTypes, settings.getString("symbolsToIgnore", "()[].=;"));
-        }
-        scrollView.post(new Runnable() {
-            @Override
-            public void run() {
-                scrollView.smoothScrollTo(0, recognizedTextPage.getBottom());
+        if (view.getId() == R.id.recognize_card) {
+            // Запуск фонового процесса распознавания
+            if (works.isEmpty()) {
+                Toast.makeText(this, "Загрузите работы для проверки!", Toast.LENGTH_SHORT).show();
+                return;
             }
-        });
+            recognizedTextPage.setVisibility(VISIBLE);
+            recognizedTextTablesLayout.removeAllViews();
+            recTextTable = new androidx.gridlayout.widget.GridLayout(this);
+            recTextTable.setLayoutParams(new ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT));
+            recTextTable.setColumnCount(1);
+            recTextTable.setBackgroundColor(getResources().getColor(R.color.dark_green));
+            recTextTable.addView(getLayoutInflater().inflate(R.layout.table_recognized_text_header, null));
+            recognizedTextTablesLayout.addView(recTextTable);
+            int tasksCount = Integer.parseInt(tasksCountInput.getText().toString());
+            String taskTypes = getTaskTypes();
+            k = 0;
+            waitingText.setText("Пожалуйста, подождите, пока текст работ не будет распознан");
+            waitAppBarLayout.setVisibility(View.VISIBLE);
+            waitAppBarLayout.animate()
+                    .translationY(0)
+                    .setDuration(300)
+                    .start();
+            int waitTime = 3 * tasksCount * works.size();
+            initTimer(waitTime * 1000L);
+
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    Data inputData = new Data.Builder()
+                            .putString("taskTypes", taskTypes)
+                            .putString("symbolsToIgnore", settings.getString("symbolsToIgnore", "()[].=;"))
+                            .build();
+                    DataStore.saveBitmapsForRecognition(CheckActivity.this, works);
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            OneTimeWorkRequest recognitionRequest = new OneTimeWorkRequest.Builder(RecognitionWorker.class).setInputData(inputData).build();
+                            WorkManager.getInstance(CheckActivity.this).enqueueUniqueWork("recognition_unique", ExistingWorkPolicy.REPLACE, recognitionRequest);
+                            WorkManager.getInstance(CheckActivity.this).getWorkInfoByIdLiveData(recognitionRequest.getId()).observe(CheckActivity.this, new Observer<WorkInfo>() {
+                                @Override
+                                public void onChanged(WorkInfo workInfo) {
+                                    if (workInfo != null && workInfo.getState().isFinished()) {
+                                        waitAppBarLayout.animate()
+                                                .translationY(-waitAppBarLayout.getHeight())
+                                                .setDuration(300)
+                                                .withEndAction(() -> waitAppBarLayout.setVisibility(View.GONE))
+                                                .start();
+                                        if (workInfo.getState() == WorkInfo.State.SUCCEEDED) {
+                                            Map<Integer, HashMap<Integer, String>> allResults = DataStore.loadRecognitionResults(CheckActivity.this);
+                                            for (Map.Entry<Integer, HashMap<Integer, String>> entry : allResults.entrySet()) {
+                                                createRecTable(tasksCount, entry.getKey(), entry.getValue());
+                                            }
+                                            checkUnlocked = true;
+                                        } else {
+                                            Toast.makeText(CheckActivity.this, "Ошибка при распознавании!", Toast.LENGTH_SHORT).show();
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        }
+        else {
+            // Запуск процесса проверки работ
+            Set<Integer> detailedTasks = detailedTaskPagesMap.keySet();
+            if (detailedTasks.isEmpty()) {
+                dropCheckResults(null);
+                return;
+            }
+            waitingText.setText("Пожалуйста, подождите, пока работы не будут проверены");
+            waitAppBarLayout.setVisibility(View.VISIBLE);
+            waitAppBarLayout.animate()
+                    .translationY(0)
+                    .setDuration(300)
+                    .start();
+            initTimer(21000L * detailedTasks.size() * works.size());
+
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    DataStore.saveBitmapsForCheck(CheckActivity.this, works);
+                    DataStore.saveCriteria(CheckActivity.this, detailedTaskPagesMap);
+                    Data inputData = new Data.Builder()
+                            .putInt("worksCount", works.size())
+                            .putIntArray("detailedTasks", detailedTasks.stream().mapToInt(Number::intValue).toArray())
+                            .build();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            OneTimeWorkRequest checkRequest = new OneTimeWorkRequest.Builder(CheckWorker.class).setInputData(inputData).build();
+                            WorkManager.getInstance(CheckActivity.this).enqueueUniqueWork("check_unique", ExistingWorkPolicy.REPLACE, checkRequest);
+                            WorkManager.getInstance(CheckActivity.this).getWorkInfoByIdLiveData(checkRequest.getId()).observe(CheckActivity.this, new Observer<WorkInfo>() {
+                                @Override
+                                public void onChanged(WorkInfo workInfo) {
+                                    if (workInfo != null && workInfo.getState().isFinished()) {
+                                        timer.cancel();
+                                        waitAppBarLayout.animate()
+                                                .translationY(-waitAppBarLayout.getHeight())
+                                                .setDuration(300)
+                                                .withEndAction(() -> waitAppBarLayout.setVisibility(View.GONE))
+                                                .start();
+                                        List<Pair<Integer, HashMap<Integer, HashMap<String, Pair<Integer, String>>>>> results = DataStore.loadCheckResults(CheckActivity.this);
+                                        dropCheckResults(results);
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        }
     }
 
+    //Получить типы заданий с кратким ответом
     public String getTaskTypes() {
         StringBuilder res = new StringBuilder();
         Set<Integer> detailedTasks = detailedTaskPagesMap.keySet();
@@ -432,6 +561,7 @@ public class CheckActivity extends BaseActivity {
         return res.toString();
     }
 
+    //Запустить таймер
     public void initTimer(long time) {
         if (timer != null) timer.cancel();
         timer = new CountDownTimer(time, 1000) {
@@ -453,6 +583,7 @@ public class CheckActivity extends BaseActivity {
         timer.start();
     }
 
+    //Таблица ответов для одной работы
     @SuppressLint("SetTextI18n")
     public void createRecTable(int tasksCount, int i, @Nullable HashMap<Integer, String> answersMap) {
         if (k == 3) {
@@ -481,6 +612,7 @@ public class CheckActivity extends BaseActivity {
         k++;
     }
 
+    //Выявление несамостоятельного выполнения работ
     public HashMap<Integer, Map<String, Object>> detectCheaters(Map<String, Map<Integer, String>> studentAnswers,
             HashMap<Integer, Pair<String, Double>> answersMap) {
 
@@ -604,81 +736,15 @@ public class CheckActivity extends BaseActivity {
         return result;
     }
 
+    //Вычисление вероятности списывания
     public int getProbability(int groupSize, double totalWeight, double maxTotalWeight) {
         return (int) Math.min(Math.round((totalWeight / maxTotalWeight + 0.07 * (groupSize - 2)) * 100), 100);
     }
 
-    public List<Bitmap> getBitmapsFromPages(Context context, List<WorkAdapter.PageItem> pages) {
-        List<Bitmap> bitmaps = new ArrayList<>();
-        for (WorkAdapter.PageItem pageItem : pages) {
-            Uri imageUri = pageItem.getUri();
-            try {
-                Bitmap bitmap = MediaStore.Images.Media.getBitmap(context.getContentResolver(), imageUri);
-                bitmaps.add(bitmap);
-            } catch (IOException e) {
-                bitmaps.add(null);
-            }
-        }
-        return bitmaps;
-    }
-
-    @SuppressLint("SetTextI18n")
-    public void onCheckWorksPageClick(View view) {
-        if (!isTablesCorrect(answersTable, gradesTable)) {
-            Toast.makeText(this, "Проверьте корректность заполнения таблиц!", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        Set<Integer> detailedTasks = detailedTaskPagesMap.keySet();
-        if (detailedTasks.isEmpty()) {
-            dropCheckResults(null);
-            return;
-        }
-        waitingText.setText("Пожалуйста, подождите, пока работы не будут проверены");
-        waitAppBarLayout.setVisibility(View.VISIBLE);
-        waitAppBarLayout.animate()
-                .translationY(0)
-                .setDuration(300)
-                .start();
-        initTimer(20000L * detailedTasks.size() * works.size());
-
-        List<Pair<Integer, HashMap<Integer, HashMap<String, Pair<Integer, String>>>>> allResults = new ArrayList<>();
-        AtomicInteger completedRequests = new AtomicInteger(0);
-        int totalDetailedTasks = works.size() * detailedTasks.size();
-        AIService aiService = new AIService(this);
-        for (int i = 1; i <= works.size(); i++) {
-            HashMap<Integer, HashMap<String, Pair<Integer, String>>> workResults = new HashMap<>();
-            allResults.add(new Pair<>(i, workResults));
-            final int workIndex = i;
-            for (int t : detailedTasks) {
-                List<Bitmap> workPages = getBitmapsFromPages(this, works.get(i - 1).getPages());
-                List<Bitmap> criteria = getBitmapsFromPages(this, detailedTaskPagesMap.get(t));
-                aiService.evaluateDetailedTask(workPages, t, criteria, new SimpleCallback<HashMap<String, Pair<Integer, String>>>() {
-                    @Override
-                    public void onLoad(HashMap<String, Pair<Integer, String>> data) {
-                        synchronized (allResults) {
-                            for (Pair<Integer, HashMap<Integer, HashMap<String, Pair<Integer, String>>>> result : allResults) {
-                                if (result.first == workIndex) {
-                                    result.second.put(t, data);
-                                    break;
-                                }
-                            }
-                            if (completedRequests.incrementAndGet() == totalDetailedTasks) {
-                                runOnUiThread(() -> {
-                                    Collections.sort(allResults, (o1, o2) -> o1.first.compareTo(o2.first));
-                                    allDetailedResults = allResults;
-                                    dropCheckResults(allResults);
-                                });
-                            }
-                        }
-                    }
-                });
-            }
-        }
-    }
-
+    // Отображение результатов проверки
     @SuppressLint("SetTextI18n")
     public void dropCheckResults(List<Pair<Integer, HashMap<Integer, HashMap<String, Pair<Integer, String>>>>> allResults) {
-        checkWorksLayout.setVisibility(VISIBLE);
+        resultsLayout.setVisibility(VISIBLE);
         resultsTable.removeAllViews();
         gradesDistributionTable.removeAllViews();
         tasksCompletingTable.removeAllViews();
@@ -762,8 +828,7 @@ public class CheckActivity extends BaseActivity {
                             recognizedAnswer = sortAnswer(recognizedAnswer);
                             rightAnswer = sortAnswer(rightAnswer);
                         }
-                        if (recognizedAnswer.equals(rightAnswer))
-                            points = answer.getPoints();
+                        if (recognizedAnswer.equals(rightAnswer)) points = answer.getPoints();
                     } else {
                         int mistakes = getMistakes(orderMatters, recognizedAnswer, rightAnswer);
                         List<ComplexCriteria> gradingList = (List<ComplexCriteria>) answersMapForCheck.get(t).get(1);
@@ -817,6 +882,7 @@ public class CheckActivity extends BaseActivity {
             resultsTable.addView(row);
         }
         if (!detailedTasks.isEmpty()) {
+            //Для развёрнутых ответов, если есть
             resultsDetailedLayout.setVisibility(VISIBLE);
             resultsDetailedTablesLayout.removeAllViews();
             resultsDetailedTable = new androidx.gridlayout.widget.GridLayout(this);
@@ -866,6 +932,8 @@ public class CheckActivity extends BaseActivity {
             }
         }
         else resultsDetailedLayout.setVisibility(GONE);
+
+        //Аналитический материал
         gradesDistributionTable.addView(getLayoutInflater().inflate(R.layout.table_grades_distribution_header, null));
         ArrayList<PieEntry> pieEntries = new ArrayList<>();
         int percentagesSum = 0;
@@ -1024,7 +1092,7 @@ public class CheckActivity extends BaseActivity {
         scrollView.post(new Runnable() {
             @Override
             public void run() {
-                scrollView.smoothScrollTo(0, checkWorksLayout.getBottom());
+                scrollView.smoothScrollTo(0, checkWorksPage.getBottom());
             }
         });
     }
@@ -1032,6 +1100,7 @@ public class CheckActivity extends BaseActivity {
     public int getMistakes(boolean orderMatters, String recognizedAnswer, String rightAnswer) {
         int mistakes = 0;
         if (!orderMatters) {
+            //Кол-во ошибок в задании на множественный выбор
             Set<Character> set1 = new HashSet<>();
             for (char c : recognizedAnswer.toCharArray()) {
                 set1.add(c);
@@ -1048,6 +1117,7 @@ public class CheckActivity extends BaseActivity {
             mistakes = res.size();
         }
         else {
+            //Кол-во ошибок в задании на соответствие
             int minLength = Math.min(recognizedAnswer.length(), rightAnswer.length());
             int maxLength = Math.max(recognizedAnswer.length(), rightAnswer.length());
             for (int j = 0; j < minLength; j++) {
@@ -1060,6 +1130,7 @@ public class CheckActivity extends BaseActivity {
         return mistakes;
     }
 
+    //Сортировка множественного выбора
     public String sortAnswer(String answer) {
         StringBuilder letters = new StringBuilder();
         StringBuilder digits = new StringBuilder();
@@ -1077,6 +1148,7 @@ public class CheckActivity extends BaseActivity {
         return new String(digitArray) + new String(letterArray);
     }
 
+    //Выравнивание столбцов в таблице по ширине
     public void updateColumnsWidth(Sheet table, int colCount) {
         Map<Integer, Integer> columnWidths = new HashMap<>();
         for (int col = 0; col < colCount; col++) {
@@ -1096,6 +1168,7 @@ public class CheckActivity extends BaseActivity {
         }
     }
 
+    //Инициализация стилей в таблице Excel
     public void createStyles(Workbook table) {
         Font whiteFont = table.createFont();
         whiteFont.setColor(IndexedColors.WHITE.getIndex());
@@ -1137,6 +1210,7 @@ public class CheckActivity extends BaseActivity {
         redBackground.setFont(whiteFont);
     }
 
+    // Сохранение результатов в Excel
     public void onDownloadResultsClick(View view) {
         boolean isOneTableEnabled = settings.getBoolean("isOneTableEnabled", false);
         boolean isOneSheetEnabled = isOneTableEnabled && settings.getBoolean("isOneSheetEnabled", false);
@@ -1492,7 +1566,7 @@ public class CheckActivity extends BaseActivity {
         scrollView.post(new Runnable() {
             @Override
             public void run() {
-                scrollView.smoothScrollTo(0, checkWorksLayout.getBottom());
+                scrollView.smoothScrollTo(0, checkWorksPage.getBottom());
             }
         });
     }

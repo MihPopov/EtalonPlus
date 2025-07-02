@@ -1,5 +1,8 @@
 package com.mihpopov.etalonplus.Data;
 
+/**
+ * Класс Grade представляет оценку за выполнение работы на основании суммы баллов за задания.
+ */
 public class Grade {
     private int id;
     private int etalonId;

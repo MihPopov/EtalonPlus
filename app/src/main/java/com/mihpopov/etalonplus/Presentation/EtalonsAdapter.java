@@ -21,6 +21,9 @@ import com.mihpopov.etalonplus.R;
 
 import java.util.List;
 
+/**
+ * Адаптер для отображения списка эталонов в RecyclerView с возможностью их удаления.
+ */
 public class EtalonsAdapter extends RecyclerView.Adapter<EtalonsAdapter.EtalonViewHolder> {
 
     private Context context;

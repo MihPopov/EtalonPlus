@@ -6,6 +6,7 @@ import android.os.Bundle;
 
 import androidx.activity.ComponentActivity;
 
+//Активность для сплеша приложения
 @SuppressLint("CustomSplashScreen")
 public class SplashActivity extends ComponentActivity {
 

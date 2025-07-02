@@ -23,6 +23,9 @@ import com.mihpopov.etalonplus.Common.DatabaseHelper;
 import com.mihpopov.etalonplus.R;
 import com.google.android.material.textfield.TextInputEditText;
 
+/**
+ * Активность для управления эталонами и создания новых. Отсюда можно перейти в EtalonActivity.
+ */
 public class StorageActivity extends BaseActivity {
 
     ScrollView scrollView;
@@ -53,6 +56,7 @@ public class StorageActivity extends BaseActivity {
 
         etalonIconBitmap = ((BitmapDrawable) getDrawable(R.drawable.etalon_plus)).getBitmap();
 
+        //Загрузка эталонов из базы данных
         dbHelper = new DatabaseHelper(this);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         etalonList = dbHelper.getAllEtalons();
@@ -113,6 +117,7 @@ public class StorageActivity extends BaseActivity {
         });
     }
 
+    //Генерация таблиц для создания эталона
     @SuppressLint("SetTextI18n")
     public void onGenerateTablesClick(View view) {
         int tasksCount;

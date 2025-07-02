@@ -29,14 +29,11 @@
 
                 <androidx.cardview.widget.CardView
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
                     android:layout_margin="6dp"
                     android:onClick="onExitFromSettingsClick"
-                    app:cardBackgroundColor="@color/white"
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="6dp"
-                    tools:ignore="OnClick">
+                    tools:ignore="OnClick"
+                    style="@style/CardViewStyle">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -152,17 +149,7 @@
                 </androidx.cardview.widget.CardView>
 
                 <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
-                    android:textColorHint="@color/white"
-                    app:cursorColor="@color/white"
-                    app:boxCornerRadiusTopStart="12dp"
-                    app:boxCornerRadiusTopEnd="12dp"
-                    app:boxCornerRadiusBottomStart="12dp"
-                    app:boxCornerRadiusBottomEnd="12dp"
-                    app:hintTextColor="@color/white"
-                    app:boxStrokeWidth="2dp"
                     style="@style/TextInputLayoutStyle">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -211,15 +198,12 @@
 
                     <androidx.cardview.widget.CardView
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
                         android:layout_marginStart="20dp"
                         android:layout_marginEnd="10dp"
                         android:layout_marginBottom="10dp"
                         android:onClick="onAddGradeClick"
-                        app:cardBackgroundColor="@color/white"
-                        app:cardCornerRadius="12dp"
-                        app:cardElevation="6dp"
-                        tools:ignore="OnClick">
+                        tools:ignore="OnClick"
+                        style="@style/CardViewStyle">
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -248,15 +232,12 @@
 
                     <androidx.cardview.widget.CardView
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
                         android:layout_marginStart="10dp"
                         android:layout_marginEnd="20dp"
                         android:layout_marginBottom="10dp"
                         android:onClick="onRemoveGradeClick"
-                        app:cardBackgroundColor="@color/white"
-                        app:cardCornerRadius="12dp"
-                        app:cardElevation="6dp"
-                        tools:ignore="OnClick">
+                        tools:ignore="OnClick"
+                        style="@style/CardViewStyle">
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -311,19 +292,9 @@
                 android:textSize="18sp" />
 
             <com.google.android.material.textfield.TextInputLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
                 android:layout_marginStart="20dp"
                 android:layout_marginEnd="20dp"
                 android:layout_marginTop="5dp"
-                android:textColorHint="@color/white"
-                app:cursorColor="@color/white"
-                app:boxCornerRadiusTopStart="12dp"
-                app:boxCornerRadiusTopEnd="12dp"
-                app:boxCornerRadiusBottomStart="12dp"
-                app:boxCornerRadiusBottomEnd="12dp"
-                app:hintTextColor="@color/white"
-                app:boxStrokeWidth="2dp"
                 style="@style/TextInputLayoutStyle">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -556,15 +527,12 @@
             <androidx.cardview.widget.CardView
                 android:onClick="onSaveSettingsClick"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
                 android:layout_marginStart="20dp"
                 android:layout_marginEnd="20dp"
                 android:layout_marginTop="15dp"
                 android:layout_marginBottom="10dp"
-                app:cardBackgroundColor="@color/white"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="6dp"
-                tools:ignore="OnClick">
+                tools:ignore="OnClick"
+                style="@style/CardViewStyle">
 
                 <LinearLayout
                     android:layout_width="match_parent"
