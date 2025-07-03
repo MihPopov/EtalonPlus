@@ -533,6 +533,7 @@ public class CheckActivity extends BaseActivity {
                                                 .withEndAction(() -> waitAppBarLayout.setVisibility(View.GONE))
                                                 .start();
                                         List<Pair<Integer, HashMap<Integer, HashMap<String, Pair<Integer, String>>>>> results = DataStore.loadCheckResults(CheckActivity.this);
+                                        allDetailedResults = results;
                                         dropCheckResults(results);
                                     }
                                 }
