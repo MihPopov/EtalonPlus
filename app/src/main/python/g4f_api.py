@@ -1,20 +1,45 @@
-import g4f
-import g4f.Provider
+from g4f.client import ClientFactory
 from io import BytesIO
 from typing import Dict, Tuple
+import base64
+import requests
 
-def recognize_test_answers(prompt, page_bytes):
-    client = g4f.Client(provider=g4f.Provider.PollinationsAI)
-    with BytesIO(page_bytes) as img_buffer:
-        images = [
-            [img_buffer, "Страница.jpg"]
-        ]
+IMGBB_API_KEY = "faa8af3acf3477d39b1d6958847dd532"
+client = ClientFactory.create_client("pollinations")
+
+def upload_image_to_imgbb(image_bytes: bytes, expiration: int = 3600) -> str:
+    image_base64 = base64.b64encode(image_bytes).decode("utf-8")
+    resp = requests.post(
+        "https://api.imgbb.com/1/upload",
+        data={
+            "key": IMGBB_API_KEY,
+            "image": image_base64,
+            "expiration": expiration
+        }
+    )
+    resp.raise_for_status()
+    data = resp.json()["data"]
+    print(data)
+    return data["url"]
+
+def recognize_test_answers(prompt: str, page_bytes: bytes) -> str:
+    image_url = upload_image_to_imgbb(page_bytes, expiration=3600)
+    images = [
+        {"type": "image_url", "image_url": {"url": image_url}}
+    ]
+    result = ""
+    try:
         response = client.chat.completions.create(
-            messages=[{"content": prompt, "role": "user"}],
-            model="",
-            images=images
+            messages=[{"content": [{"type": "text", "text": prompt}] + images, "role": "user"}],
+            model=""
         )
-        return response.choices[0].message.content
+        result = response.choices[0].message.content
+        print(result)
+    except Exception as e:
+        print(str(e))
+        result = f"Ошибка:{str(e)}"
+    finally:
+        return result
 
 def get_test_answers(page_bytes, taskTypes):
     prompt = [
@@ -27,10 +52,11 @@ def get_test_answers(page_bytes, taskTypes):
         "Внутри ответов не должно быть пробелов. Единственный пробел - после номера задания.\n",
         "Кроме этого больше ничего не выводи, в том числе заголовок"
     ]
-
     try:
+        print(1)
         return recognize_test_answers("".join(prompt), page_bytes)
     except Exception as e:
+        print(str(e))
         return f"{str(e).replace(" ", "")}"
 
 def check_detailed_task(pages_bytes: list, criteria_bytes: list, taskNum: int) -> Dict[str, Tuple[int, str]]:
@@ -41,6 +67,7 @@ def check_detailed_task(pages_bytes: list, criteria_bytes: list, taskNum: int) -
         "1. ВНИМАТЕЛЬНО изучи ответ ученика на задание и приведённую систему критериев оценивания\n",
         "2. Выбери ОДИН наиболее подходящий вариант оценки из системы критериев\n",
         "3. Формат вывода: Номер критерия|Баллы|Комментарий\n",
+        "4. Номер критерия - это не балл. Если он не отмечается на изображении - укажи его порядковый номер, начиная с 1. Под критерием понимается пункт в оценивании, в котором может быть выставленно разное количество баллов\n",
         "Требования:\n",
         "- Выбери только ОДИН подходящий критерий из системы.\n",
         "- В комментарии укажи, почему выбран именно этот критерий. Ограничься 1-2 предложениями.\n"
@@ -49,20 +76,32 @@ def check_detailed_task(pages_bytes: list, criteria_bytes: list, taskNum: int) -
     try:
         return get_detailed_task("".join(prompt), pages_bytes, criteria_bytes)
     except Exception as e:
+        print(str(e))
         return f"Ошибка обработки: {str(e)}"
 
 def get_detailed_task(prompt: str, pages_bytes: list, criteria_bytes: list) -> Dict[str, Tuple[int, str]]:
-    client = g4f.Client(provider=g4f.Provider.PollinationsAI)
     images = []
-    for i, page in enumerate(pages_bytes):
-        images.append([BytesIO(page), f"work_page_{i}.jpg"])
-    for i, page in enumerate(criteria_bytes):
-        images.append([BytesIO(page), f"criteria_page_{i}.jpg"])
+    for page in pages_bytes:
+        url = upload_image_to_imgbb(page)
+        images.append({
+            "type": "image_url",
+            "image_url": {"url": url}
+        })
+    for page in criteria_bytes:
+        url = upload_image_to_imgbb(page)
+        images.append({
+            "type": "image_url",
+            "image_url": {"url": url}
+        })
+    message_content = [{"type": "text", "text": prompt}] + images
+#     for i, page in enumerate(pages_bytes):
+#         images.append([BytesIO(page), f"work_page_{i}.jpg"])
+#     for i, page in enumerate(criteria_bytes):
+#         images.append([BytesIO(page), f"criteria_page_{i}.jpg"])
     response = client.chat.completions.create(
-        messages=[{"content": prompt, "role": "user"}],
+        messages=[{"content": message_content, "role": "user"}],
         model="",
-        temperature=0,
-        images=images
+        temperature=0
     )
     return parse_response(response.choices[0].message.content)
 

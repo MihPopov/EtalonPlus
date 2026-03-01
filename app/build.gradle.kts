@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-    namespace = "com.mihpopov.etalonplus"
-    compileSdk = 34
+    namespace = "com.cubably.gradeplus"
+    compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.mihpopov.etalonplus"
-        minSdk = 26
+        applicationId = "com.cubably.gradeplus"
+        minSdk = 29
         targetSdk = 34
         versionCode = 1
         versionName = "1.1.0"
@@ -41,7 +41,8 @@ chaquopy {
     defaultConfig {
         version = "3.12"
         pip {
-            install("g4f==0.5.2.9")
+            install("g4f==v7.2.5")
+            install("pillow")
         }
     }
 }
@@ -50,7 +51,6 @@ dependencies {
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
-    implementation(libs.constraintlayout)
     implementation(libs.core.splashscreen)
     implementation(libs.gridlayout)
     implementation(libs.poi)

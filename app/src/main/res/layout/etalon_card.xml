@@ -63,6 +63,15 @@
         </LinearLayout>
 
         <ImageView
+            android:id="@+id/etalon_export"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="20dp"
+            android:src="@drawable/export"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            app:tint="@color/dark_green" />
+
+        <ImageView
             android:id="@+id/etalon_delete"
             android:layout_width="40dp"
             android:layout_height="40dp"
