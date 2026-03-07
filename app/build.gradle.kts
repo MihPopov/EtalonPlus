@@ -7,6 +7,10 @@ android {
     namespace = "com.cubably.gradeplus"
     compileSdk = 36
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     defaultConfig {
         applicationId = "com.cubably.gradeplus"
         minSdk = 29
@@ -19,6 +23,9 @@ android {
         ndk {
             abiFilters += listOf("arm64-v8a", "x86_64")
         }
+
+        buildConfigField("String", "IMGBB_KEY", "\"faa8af3acf3477d39b1d6958847dd532\"")
+        buildConfigField("String", "POLLINATIONS_KEY", "\"sk_pZ9KFJge4GedHE6nTPUIPDExGGHcOAKq\"")
     }
 
     buildTypes {
@@ -31,6 +38,7 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
@@ -41,8 +49,7 @@ chaquopy {
     defaultConfig {
         version = "3.12"
         pip {
-            install("g4f==v7.2.5")
-            install("pillow")
+            install("requests")
         }
     }
 }

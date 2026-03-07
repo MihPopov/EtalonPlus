@@ -9,6 +9,7 @@ import android.util.Pair;
 import com.chaquo.python.PyObject;
 import com.chaquo.python.Python;
 import com.chaquo.python.android.AndroidPlatform;
+import com.cubably.gradeplus.BuildConfig;
 
 import java.io.*;
 import java.util.*;
@@ -58,7 +59,8 @@ public class AIService {
                     ByteArrayOutputStream bos = new ByteArrayOutputStream();
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 90, bos);
                     byte[] imageBytes = bos.toByteArray();
-                    String result = python.getModule("g4f_api").callAttr("get_test_answers", imageBytes, taskTypes).toString();
+                    String result = python.getModule("pollinations_api").callAttr("get_test_answers", imageBytes, taskTypes,
+                            BuildConfig.IMGBB_KEY, BuildConfig.POLLINATIONS_KEY).toString();
                     HashMap<Integer, String> pageResults = parseRecognizedText(result.split("\n"));
                     combinedResults.putAll(pageResults);
                 }
@@ -126,8 +128,9 @@ public class AIService {
                 List<byte[]> workData = convertBitmaps(workPages);
                 List<byte[]> criteriaData = convertBitmaps(criteria);
 
-                PyObject result = python.getModule("g4f_api").callAttr("check_detailed_task", PyObject.fromJava(workData.toArray()),
-                        PyObject.fromJava(criteriaData.toArray()), taskNum);
+                PyObject result = python.getModule("pollinations_api").callAttr("check_detailed_task", PyObject.fromJava(workData.toArray()),
+                        PyObject.fromJava(criteriaData.toArray()), taskNum, BuildConfig.IMGBB_KEY, BuildConfig.POLLINATIONS_KEY);
+                Log.d("777", result.toString());
                 return parseEvaluationResult(result);
             } catch (Exception e) {
                 this.exception = e;

@@ -67,7 +67,6 @@ import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
 import com.github.mikephil.charting.formatter.ValueFormatter;
-import com.github.mikephil.charting.utils.ColorTemplate;
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.checkbox.MaterialCheckBox;
 import com.google.android.material.textfield.TextInputEditText;
@@ -112,6 +111,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -503,7 +503,7 @@ public class CheckActivity extends BaseActivity {
                     .translationY(0)
                     .setDuration(300)
                     .start();
-            initTimer(21000L * detailedTasks.size() * works.size());
+            initTimer(30000L * detailedTasks.size() * works.size());
 
             ExecutorService executor = Executors.newSingleThreadExecutor();
             executor.execute(new Runnable() {
@@ -1331,7 +1331,7 @@ public class CheckActivity extends BaseActivity {
                     cell.setCellStyle(commonStyle);
                     cell = row.createCell(j + 1);
                     double points = Double.parseDouble(((TextView) taskElement.findViewById(R.id.res_points)).getText().toString());
-                    double maxPoints = answerPointsMap.get(j - k).second;
+                    double maxPoints = Objects.requireNonNull(answerPointsMap.get(j - k)).second;
                     cell.setCellValue(points);
                     if (isColoringEnabled) {
                         if (points == 0) cell.setCellStyle(redBackground);
